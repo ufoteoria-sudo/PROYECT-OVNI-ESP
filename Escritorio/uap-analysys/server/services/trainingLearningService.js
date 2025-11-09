@@ -89,6 +89,17 @@ class TrainingLearningService {
         }
       };
 
+      // 7.5. Si hay una coincidencia fuerte, actualizar la descripción
+      if (bestTrainingMatch && visualComparison.similarity > 70) {
+        const originalDesc = enhancedAnalysis.description || '';
+        enhancedAnalysis.description = `Identificado como ${bestTrainingMatch.type} con ${visualComparison.similarity}% de similitud basado en datos de entrenamiento. ${bestTrainingMatch.description || ''}`;
+        
+        // Actualizar categoría si es más específica
+        if (bestTrainingMatch.category) {
+          enhancedAnalysis.category = bestTrainingMatch.category;
+        }
+      }
+
       // 8. Agregar recomendaciones específicas basadas en entrenamiento
       if (bestTrainingMatch) {
         const recommendations = this.generateTrainingBasedRecommendations(
@@ -296,68 +307,150 @@ class TrainingLearningService {
    * Calcula similitud entre características
    */
   calculateFeatureSimilarity(imageFeatures, trainingFeatures, trainingImage) {
-    let similarity = 50; // Base de 50%
+    let similarity = 40; // Base más baja para exigir coincidencias reales
 
-    // Si no hay características de entrenamiento, usar solo estadísticas
-    if (!trainingFeatures || Object.keys(trainingFeatures).length === 0) {
-      // Usar estadísticas de uso como indicador
+    // Si no hay características auto-extraídas, usar solo estadísticas
+    if (!trainingFeatures || !trainingFeatures.autoExtracted) {
       const accuracy = trainingImage.usageStats?.accuracy || 0;
       const matchCount = trainingImage.usageStats?.matchCount || 0;
       
-      return Math.min(50 + (accuracy * 0.3) + (Math.min(matchCount, 10) * 2), 90);
+      return Math.min(40 + (accuracy * 0.3) + (Math.min(matchCount, 10) * 2), 75);
     }
 
-    // Comparar aspect ratio si existe
-    if (imageFeatures.aspectRatio && trainingFeatures.aspectRatio) {
-      const aspectDiff = Math.abs(imageFeatures.aspectRatio - trainingFeatures.aspectRatio);
-      similarity += (1 - Math.min(aspectDiff, 1)) * 10;
+    const autoFeatures = trainingFeatures.autoExtracted;
+    let totalWeight = 0;
+    let matchedWeight = 0;
+
+    // 1. ASPECT RATIO (peso: 20) - Muy importante para forma
+    if (imageFeatures.aspectRatio && autoFeatures.aspectRatio) {
+      totalWeight += 20;
+      const imgRatio = parseFloat(imageFeatures.aspectRatio);
+      const trainRatio = parseFloat(autoFeatures.aspectRatio);
+      const ratioDiff = Math.abs(imgRatio - trainRatio);
+      
+      // Tolerancia: diferencia < 0.2 = match perfecto
+      if (ratioDiff < 0.2) {
+        matchedWeight += 20;
+      } else if (ratioDiff < 0.5) {
+        matchedWeight += 15;
+      } else if (ratioDiff < 1.0) {
+        matchedWeight += 10;
+      } else {
+        matchedWeight += 5;
+      }
     }
 
-    // Comparar colores dominantes
-    if (imageFeatures.dominantColors && trainingFeatures.colors) {
-      const colorMatch = this.compareColors(
+    // 2. BRIGHTNESS (peso: 15) - Importante para iluminación
+    if (imageFeatures.brightness !== undefined && autoFeatures.brightness) {
+      totalWeight += 15;
+      const imgBright = parseFloat(imageFeatures.brightness);
+      const trainBright = parseFloat(autoFeatures.brightness);
+      const brightDiff = Math.abs(imgBright - trainBright);
+      
+      // Tolerancia: diferencia < 0.1 = match muy bueno
+      if (brightDiff < 0.1) {
+        matchedWeight += 15;
+      } else if (brightDiff < 0.2) {
+        matchedWeight += 12;
+      } else if (brightDiff < 0.3) {
+        matchedWeight += 8;
+      } else {
+        matchedWeight += 4;
+      }
+    }
+
+    // 3. CONTRAST (peso: 15) - Importante para textura
+    if (imageFeatures.contrast !== undefined && autoFeatures.contrast) {
+      totalWeight += 15;
+      const imgContrast = parseFloat(imageFeatures.contrast);
+      const trainContrast = parseFloat(autoFeatures.contrast);
+      const contrastDiff = Math.abs(imgContrast - trainContrast);
+      
+      if (contrastDiff < 0.1) {
+        matchedWeight += 15;
+      } else if (contrastDiff < 0.2) {
+        matchedWeight += 12;
+      } else if (contrastDiff < 0.3) {
+        matchedWeight += 8;
+      } else {
+        matchedWeight += 4;
+      }
+    }
+
+    // 4. DOMINANT COLORS (peso: 25) - Muy importante
+    if (imageFeatures.dominantColors && autoFeatures.dominantColors) {
+      totalWeight += 25;
+      const colorSimilarity = this.compareColorChannels(
         imageFeatures.dominantColors,
-        trainingFeatures.colors
+        autoFeatures.dominantColors
       );
-      similarity += colorMatch * 15;
+      matchedWeight += colorSimilarity * 25;
     }
 
-    // Comparar brillo
-    if (imageFeatures.brightness !== undefined && trainingFeatures.brightness) {
-      const brightnessDiff = Math.abs(imageFeatures.brightness - parseFloat(trainingFeatures.brightness));
-      similarity += (1 - brightnessDiff) * 10;
+    // 5. SIZE SIMILARITY (peso: 10) - Resolución similar puede indicar equipo similar
+    if (imageFeatures.width && autoFeatures.width && 
+        imageFeatures.height && autoFeatures.height) {
+      totalWeight += 10;
+      const imgArea = imageFeatures.width * imageFeatures.height;
+      const trainArea = autoFeatures.width * autoFeatures.height;
+      const areaDiff = Math.abs(imgArea - trainArea) / Math.max(imgArea, trainArea);
+      
+      if (areaDiff < 0.2) {
+        matchedWeight += 10;
+      } else if (areaDiff < 0.5) {
+        matchedWeight += 7;
+      } else {
+        matchedWeight += 4;
+      }
     }
+
+    // Calcular similitud final
+    const calculatedSimilarity = totalWeight > 0 
+      ? (matchedWeight / totalWeight) * 100
+      : 40;
 
     // Bonus por estadísticas de uso positivas
-    if (trainingImage.usageStats) {
-      const accuracyBonus = (trainingImage.usageStats.accuracy || 0) * 0.15;
-      similarity += accuracyBonus;
+    let finalSimilarity = calculatedSimilarity;
+    if (trainingImage.usageStats && trainingImage.usageStats.accuracy > 70) {
+      finalSimilarity += (trainingImage.usageStats.accuracy - 70) * 0.2;
     }
 
-    return Math.min(Math.round(similarity), 95);
+    // Bonus por muchos usos exitosos
+    if (trainingImage.usageStats && trainingImage.usageStats.matchCount > 5) {
+      finalSimilarity += Math.min(trainingImage.usageStats.matchCount, 20) * 0.5;
+    }
+
+    return Math.min(Math.round(finalSimilarity), 95);
   }
 
   /**
-   * Compara colores
+   * Compara canales de color
    */
-  compareColors(imageColors, trainingColors) {
-    if (!Array.isArray(trainingColors) || trainingColors.length === 0) {
+  compareColorChannels(imageColors, trainingColors) {
+    if (!Array.isArray(imageColors) || !Array.isArray(trainingColors)) {
       return 0.5;
     }
 
-    // Simplificación: contar coincidencias
-    let matches = 0;
-    const normalizedTrainingColors = trainingColors.map(c => c.toLowerCase());
+    let totalDiff = 0;
+    let channelCount = 0;
 
-    imageColors.forEach(colorData => {
-      const channelName = colorData.channel;
-      if (normalizedTrainingColors.includes(channelName) || 
-          normalizedTrainingColors.includes(channelName + 'ish')) {
-        matches++;
+    // Comparar cada canal RGB
+    ['red', 'green', 'blue'].forEach(channel => {
+      const imgChannel = imageColors.find(c => c.channel === channel);
+      const trainChannel = trainingColors.find(c => c.channel === channel);
+
+      if (imgChannel && trainChannel) {
+        const meanDiff = Math.abs(imgChannel.mean - trainChannel.mean) / 255;
+        totalDiff += meanDiff;
+        channelCount++;
       }
     });
 
-    return Math.min(matches / 3, 1);
+    if (channelCount === 0) return 0.5;
+
+    // Invertir: menor diferencia = mayor similitud
+    const avgDiff = totalDiff / channelCount;
+    return Math.max(0, 1 - avgDiff);
   }
 
   /**
@@ -368,28 +461,73 @@ class TrainingLearningService {
     const matchCount = trainingMatches.length;
     const bestMatch = visualComparison.bestMatch;
 
-    // Calcular peso del entrenamiento basado en cantidad de coincidencias
-    const trainingWeight = Math.min(matchCount / 10, 0.5); // Máximo 50% de peso
+    console.log(`   Similitud visual: ${similarity}%`);
+    console.log(`   Imágenes de entrenamiento disponibles: ${matchCount}`);
 
-    // Si hay una buena coincidencia, incrementar confianza
+    // Calcular peso del entrenamiento basado en cantidad y calidad
+    const qualityWeight = similarity / 100; // 0 a 1
+    const quantityWeight = Math.min(matchCount / 10, 1); // Máximo 1 con 10+ imágenes
+    const trainingWeight = (qualityWeight * 0.7 + quantityWeight * 0.3); // Priorizar calidad
+
+    console.log(`   Peso de entrenamiento: ${(trainingWeight * 100).toFixed(1)}%`);
+
     let enhancedConfidence = originalConfidence;
 
-    if (similarity > 70) {
-      // Coincidencia fuerte: incremento significativo
-      const increment = (similarity - 50) * trainingWeight;
-      enhancedConfidence = Math.min(originalConfidence + increment, 95);
-    } else if (similarity > 50) {
-      // Coincidencia moderada: incremento menor
-      const increment = (similarity - 30) * trainingWeight * 0.5;
-      enhancedConfidence = Math.min(originalConfidence + increment, 85);
+    // CASO 1: Coincidencia muy fuerte (>80%)
+    if (similarity > 80) {
+      const boost = 30 + (similarity - 80) * 0.5; // Boost de 30-40%
+      enhancedConfidence = Math.min(originalConfidence + boost, 95);
+      console.log(`   ✨ Coincidencia muy fuerte: +${boost.toFixed(1)}% confianza`);
+    }
+    // CASO 2: Coincidencia fuerte (70-80%)
+    else if (similarity > 70) {
+      const boost = 20 + (similarity - 70) * 0.8;
+      enhancedConfidence = Math.min(originalConfidence + boost, 90);
+      console.log(`   ✅ Coincidencia fuerte: +${boost.toFixed(1)}% confianza`);
+    }
+    // CASO 3: Coincidencia moderada-alta (60-70%)
+    else if (similarity > 60) {
+      const boost = 12 + (similarity - 60) * 0.8;
+      enhancedConfidence = Math.min(originalConfidence + boost, 85);
+      console.log(`   📊 Coincidencia moderada-alta: +${boost.toFixed(1)}% confianza`);
+    }
+    // CASO 4: Coincidencia moderada (50-60%)
+    else if (similarity > 50) {
+      const boost = 5 + (similarity - 50) * 0.7;
+      enhancedConfidence = Math.min(originalConfidence + boost, 80);
+      console.log(`   📈 Coincidencia moderada: +${boost.toFixed(1)}% confianza`);
+    }
+    // CASO 5: Coincidencia baja (<50%) - no mejorar mucho
+    else {
+      const boost = similarity * 0.1;
+      enhancedConfidence = Math.min(originalConfidence + boost, 75);
+      console.log(`   ⚠️ Coincidencia baja: +${boost.toFixed(1)}% confianza`);
     }
 
-    // Bonus por imagen de entrenamiento con alta precisión
-    if (bestMatch && bestMatch.usageStats?.accuracy > 80) {
-      enhancedConfidence += 5;
+    // Bonus adicional por imagen con historial confiable
+    if (bestMatch && bestMatch.usageStats) {
+      const accuracy = bestMatch.usageStats.accuracy || 0;
+      const matchCount = bestMatch.usageStats.matchCount || 0;
+      
+      if (accuracy > 80 && matchCount > 5) {
+        const reliabilityBonus = 5;
+        enhancedConfidence = Math.min(enhancedConfidence + reliabilityBonus, 95);
+        console.log(`   ⭐ Bonus por historial confiable: +${reliabilityBonus}%`);
+      }
     }
 
-    return Math.min(Math.round(enhancedConfidence), 95);
+    // Si hay múltiples coincidencias fuertes, aumentar confianza
+    const strongMatches = visualComparison.allMatches.filter(m => m.similarity > 70).length;
+    if (strongMatches > 1) {
+      const consensusBonus = Math.min(strongMatches * 2, 8);
+      enhancedConfidence = Math.min(enhancedConfidence + consensusBonus, 95);
+      console.log(`   🤝 Consenso de ${strongMatches} imágenes: +${consensusBonus}%`);
+    }
+
+    const finalConfidence = Math.min(Math.round(enhancedConfidence), 95);
+    console.log(`   🎯 Confianza final: ${originalConfidence}% → ${finalConfidence}%`);
+
+    return finalConfidence;
   }
 
   /**

@@ -8,6 +8,7 @@ const TrainingImage = require('../models/TrainingImage');
 const auth = require('../middleware/auth');
 const isAdmin = require('../middleware/isAdmin');
 const AuditMiddleware = require('../middleware/audit');
+const trainingLearningService = require('../services/trainingLearningService');
 
 // Configuración de multer para subida de imágenes de entrenamiento
 const storage = multer.diskStorage({
@@ -111,6 +112,27 @@ router.post('/', auth, isAdmin, upload.single('image'), async (req, res) => {
       ? JSON.parse(externalRefs)
       : externalRefs;
 
+    // NUEVO: Extraer características visuales automáticamente
+    console.log('🔍 Extrayendo características visuales de la imagen...');
+    const autoExtractedFeatures = await trainingLearningService.extractBasicFeatures(req.file.path);
+    
+    // Combinar características proporcionadas manualmente con las auto-extraídas
+    const finalVisualFeatures = {
+      // Características manuales (si se proporcionaron)
+      ...(parsedVisualFeatures || {}),
+      // Características auto-extraídas (siempre)
+      autoExtracted: {
+        aspectRatio: autoExtractedFeatures.aspectRatio?.toFixed(2),
+        dominantColors: autoExtractedFeatures.dominantColors,
+        brightness: autoExtractedFeatures.brightness?.toFixed(2),
+        contrast: autoExtractedFeatures.contrast?.toFixed(2),
+        width: autoExtractedFeatures.width,
+        height: autoExtractedFeatures.height
+      }
+    };
+
+    console.log('✅ Características extraídas:', finalVisualFeatures.autoExtracted);
+
     // Crear registro de imagen de entrenamiento
     const trainingImage = new TrainingImage({
       category,
@@ -118,7 +140,7 @@ router.post('/', auth, isAdmin, upload.single('image'), async (req, res) => {
       description,
       imageUrl: imageFilename,
       thumbnailUrl: thumbnailFilename,
-      visualFeatures: parsedVisualFeatures,
+      visualFeatures: finalVisualFeatures,
       technicalData: parsedTechnicalData,
       commonSightings: parsedCommonSightings,
       tags: parsedTags,
