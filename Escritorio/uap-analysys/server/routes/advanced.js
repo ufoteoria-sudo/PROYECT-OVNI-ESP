@@ -3,6 +3,7 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const Analysis = require('../models/Analysis');
 const mongoose = require('mongoose');
+const CacheService = require('../services/cacheService');
 
 /**
  * RUTAS DE ANÁLISIS AVANZADO
@@ -84,7 +85,16 @@ router.post('/compare', auth, async (req, res) => {
 // ==================== DETECTAR PATRONES ====================
 router.get('/patterns', auth, async (req, res) => {
   try {
-    const { days = 30, minOccurrences = 2 } = req.query;
+    const { days = 30, minOccurrences = 2, radiusKm = 10 } = req.query;
+    
+    // Crear clave de caché única para este usuario y parámetros
+    const cacheKey = `patterns_${req.user._id}_${days}_${minOccurrences}_${radiusKm}`;
+    
+    // Intentar obtener de caché
+    const cached = CacheService.get('medium', cacheKey);
+    if (cached) {
+      return res.json({ ...cached, fromCache: true });
+    }
     
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - parseInt(days));
@@ -193,16 +203,38 @@ router.get('/patterns', auth, async (req, res) => {
       }
     ]);
     
-    res.json({
+    const result = {
       period: `${days} días`,
       patterns: {
-        byCategory: categoryPatterns,
-        byLocation: locationPatterns,
-        byTime: timePatterns,
-        byObject: objectPatterns
+        byCategory: categoryPatterns.map(p => ({
+          category: p._id,
+          count: p.count,
+          avgConfidence: Math.round(p.avgConfidence || 0)
+        })),
+        byLocation: locationPatterns.map(p => ({
+          location: {
+            type: 'Point',
+            coordinates: [p._id.lon, p._id.lat]
+          },
+          count: p.count
+        })),
+        byTimeOfDay: timePatterns.map(p => ({
+          hourRange: p._id,
+          count: p.count
+        })),
+        topObjects: objectPatterns.map(p => ({
+          object: p._id,
+          count: p.count,
+          avgMatch: Math.round(p.avgMatchPercentage || 0)
+        }))
       },
       insights: generateInsights(categoryPatterns, locationPatterns, timePatterns, objectPatterns)
-    });
+    };
+    
+    // Guardar en caché por 15 minutos
+    CacheService.set('medium', cacheKey, result);
+    
+    res.json(result);
     
   } catch (error) {
     console.error('Error detectando patrones:', error);
@@ -215,6 +247,15 @@ router.get('/stats', auth, async (req, res) => {
   try {
     const { days = 30 } = req.query;
     
+    // Crear clave de caché única
+    const cacheKey = `stats_${req.user._id}_${days}`;
+    
+    // Intentar obtener de caché
+    const cached = CacheService.get('medium', cacheKey);
+    if (cached) {
+      return res.json({ ...cached, fromCache: true });
+    }
+    
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - parseInt(days));
     
@@ -223,6 +264,40 @@ router.get('/stats', auth, async (req, res) => {
       userId: req.user._id,
       createdAt: { $gte: startDate }
     });
+    
+    // Análisis completados
+    const completedAnalyses = await Analysis.countDocuments({
+      userId: req.user._id,
+      status: 'completed',
+      createdAt: { $gte: startDate }
+    });
+    
+    // Contar UAPs detectados
+    const uapCount = await Analysis.countDocuments({
+      userId: req.user._id,
+      status: 'completed',
+      'aiAnalysis.category': 'uap',
+      createdAt: { $gte: startDate }
+    });
+    
+    // Promedio de confianza
+    const confidenceAgg = await Analysis.aggregate([
+      {
+        $match: {
+          userId: mongoose.Types.ObjectId(req.user._id),
+          status: 'completed',
+          'aiAnalysis.confidence': { $exists: true },
+          createdAt: { $gte: startDate }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          avgConfidence: { $avg: '$aiAnalysis.confidence' }
+        }
+      }
+    ]);
+    const averageConfidence = confidenceAgg[0]?.avgConfidence || 0;
     
     // Análisis por estado
     const byStatus = await Analysis.aggregate([
@@ -259,11 +334,19 @@ router.get('/stats', auth, async (req, res) => {
             count: { $sum: 1 }
           }
         }
+      },
+      {
+        $project: {
+          _id: 0,
+          min: '$_id',
+          max: { $add: ['$_id', 20] },
+          count: 1
+        }
       }
     ]);
     
-    // Análisis por día de la semana
-    const byDayOfWeek = await Analysis.aggregate([
+    // Distribución por hora del día
+    const hourlyDistribution = await Analysis.aggregate([
       {
         $match: {
           userId: mongoose.Types.ObjectId(req.user._id),
@@ -272,7 +355,7 @@ router.get('/stats', auth, async (req, res) => {
       },
       {
         $group: {
-          _id: { $dayOfWeek: '$createdAt' },
+          _id: { $hour: '$createdAt' },
           count: { $sum: 1 }
         }
       },
@@ -330,15 +413,23 @@ router.get('/stats', auth, async (req, res) => {
       }
     ]);
     
-    res.json({
+    const result = {
       period: `${days} días`,
       totalAnalyses,
+      completedAnalyses,
+      uapCount,
+      averageConfidence: Math.round(averageConfidence),
       byStatus,
       confidenceDistribution,
-      byDayOfWeek,
+      hourlyDistribution,
       topCategories,
       timeline
-    });
+    };
+    
+    // Guardar en caché por 15 minutos
+    CacheService.set('medium', cacheKey, result);
+    
+    res.json(result);
     
   } catch (error) {
     console.error('Error obteniendo estadísticas:', error);

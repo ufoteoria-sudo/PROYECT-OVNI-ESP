@@ -26,3 +26,4 @@ Thumbs.db
 
 # Workspace (opcional, descomentar si no quieres versionarlo)
 # *.code-workspace
+.mozilla/

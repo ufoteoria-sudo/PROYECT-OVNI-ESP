@@ -50,6 +50,10 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' })); // Limitar tamaño de JSON
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Cache middleware
+const CacheService = require('./services/cacheService');
+app.use(CacheService.middleware());
+
 // Rutas API
 const authRouter = require('./routes/auth');
 const usersRouter = require('./routes/user');

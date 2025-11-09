@@ -4,6 +4,7 @@ const multer = require('multer');
 const upload = require('../config/multer');
 const auth = require('../middleware/auth');
 const Analysis = require('../models/Analysis');
+const CacheService = require('../services/cacheService');
 const path = require('path');
 const fs = require('fs');
 
@@ -45,6 +46,10 @@ router.post('/', auth, upload.single('file'), async (req, res) => {
     });
 
     await analysis.save();
+
+    // Invalidar caché de análisis del usuario
+    CacheService.invalidateAnalysisCache();
+    CacheService.invalidateUserCache(userId);
 
     res.status(201).json({
       message: 'Archivo subido exitosamente.',
