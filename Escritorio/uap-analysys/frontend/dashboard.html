@@ -3293,7 +3293,7 @@
                 formData.append('type', document.getElementById('trainingType').value);
                 formData.append('description', document.getElementById('trainingDescription').value);
 
-                const response = await fetch(`${API_URL}/training`, {
+                const response = await fetch(`${API_URL}/api/training`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -3353,7 +3353,7 @@
                 const category = document.getElementById('trainingFilterCategory').value;
                 const verified = document.getElementById('trainingFilterVerified').value;
                 
-                let url = `${API_URL}/training?page=${page}&limit=${trainingPageSize}`;
+                let url = `${API_URL}/api/training?page=${page}&limit=${trainingPageSize}`;
                 if (category) url += `&category=${category}`;
                 if (verified) url += `&verified=${verified}`;
 
@@ -3541,7 +3541,7 @@
             const token = localStorage.getItem('token');
 
             try {
-                const response = await fetch(`${API_URL}/training/${id}`, {
+                const response = await fetch(`${API_URL}/api/training/${id}`, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -3568,7 +3568,7 @@
             const token = localStorage.getItem('token');
 
             try {
-                const response = await fetch(`${API_URL}/training?limit=1`, {
+                const response = await fetch(`${API_URL}/api/training?limit=1`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
