@@ -292,6 +292,36 @@ const analysisSchema = new mongoose.Schema({
       default: Date.now
     }
   },
+
+  // NUEVO: Validación Externa con APIs
+  externalValidation: {
+    performed: {
+      type: Boolean,
+      default: false
+    },
+    performedAt: Date,
+    coordinates: {
+      latitude: Number,
+      longitude: Number
+    },
+    timestamp: Date,
+    results: mongoose.Schema.Types.Mixed, // Resultados completos de validación
+    hasMatches: {
+      type: Boolean,
+      default: false
+    },
+    matchCount: {
+      type: Number,
+      default: 0
+    },
+    confidence: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 0
+    },
+    error: String
+  },
   
   // Estado del análisis
   status: {

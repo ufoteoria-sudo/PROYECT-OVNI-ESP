@@ -6,6 +6,7 @@ const aiService = require('../services/aiService');
 const scientificComparisonService = require('../services/scientificComparisonService');
 const exifService = require('../services/exifService');
 const NotificationService = require('../services/notificationService');
+const externalValidationService = require('../services/externalValidationService');
 
 // POST /api/analyze/:id - Iniciar análisis de una imagen/video
 router.post('/:id', auth, async (req, res) => {
@@ -192,6 +193,62 @@ async function performAnalysis(analysisId) {
         recommendations: ['Análisis manual recomendado'],
         processedDate: new Date()
       };
+    }
+
+    // 3.5. VALIDACIÓN EXTERNA (si hay coordenadas GPS y timestamp)
+    if (analysis.exifData?.gps && analysis.exifData.datetime) {
+      const { latitude, longitude } = analysis.exifData.gps;
+      const datetime = analysis.exifData.datetime.original || analysis.exifData.datetime.digitized;
+      
+      if (latitude && longitude && datetime) {
+        console.log('🌍 Iniciando validación externa con APIs...');
+        
+        try {
+          const validationResult = await externalValidationService.validateSighting(
+            { lat: latitude, lng: longitude },
+            datetime,
+            analysis.exifData.altitude
+          );
+
+          // Guardar resultados de validación externa
+          analysis.externalValidation = {
+            performed: true,
+            performedAt: new Date(),
+            coordinates: { latitude, longitude },
+            timestamp: datetime,
+            results: validationResult,
+            hasMatches: validationResult.matches && validationResult.matches.length > 0,
+            matchCount: validationResult.matches ? validationResult.matches.length : 0,
+            confidence: validationResult.confidence || 0
+          };
+
+          // Si hay coincidencias, agregar a recomendaciones
+          if (validationResult.matches && validationResult.matches.length > 0) {
+            if (!analysis.aiAnalysis.recommendations) {
+              analysis.aiAnalysis.recommendations = [];
+            }
+            
+            const matchTypes = [...new Set(validationResult.matches.map(m => m.type))];
+            analysis.aiAnalysis.recommendations.push(
+              `VALIDACIÓN EXTERNA: Se detectaron ${validationResult.matches.length} coincidencia(s) con objetos conocidos: ${matchTypes.join(', ')}`
+            );
+          }
+
+          console.log(`✅ Validación externa completada: ${validationResult.matchCount} coincidencias encontradas`);
+        } catch (validationError) {
+          console.error('❌ Error en validación externa:', validationError.message);
+          analysis.externalValidation = {
+            performed: true,
+            performedAt: new Date(),
+            error: validationError.message,
+            hasMatches: false
+          };
+        }
+      } else {
+        console.log('ℹ️ No hay coordenadas GPS completas para validación externa');
+      }
+    } else {
+      console.log('ℹ️ No hay datos de ubicación/fecha para validación externa');
     }
 
     // 4. Actualizar estado

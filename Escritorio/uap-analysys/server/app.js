@@ -65,6 +65,7 @@ const notificationsRouter = require('./routes/notifications');
 const exportRouter = require('./routes/export');
 const auditRouter = require('./routes/audit');
 const advancedRouter = require('./routes/advanced');
+const trainingRouter = require('./routes/training');
 
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
@@ -76,6 +77,10 @@ app.use('/api/notifications', notificationsRouter);
 app.use('/api/export', exportRouter);
 app.use('/api/audit', auditRouter);
 app.use('/api/advanced', advancedRouter);
+app.use('/api/training', trainingRouter);
+
+// Servir archivos estáticos de training
+app.use('/uploads/training', express.static(path.join(__dirname, 'uploads/training')));
 
 // (Opcional) servir frontend estático si colocas la carpeta frontend junto a server
 // Descomenta si quieres servir la web desde el mismo servidor Express:

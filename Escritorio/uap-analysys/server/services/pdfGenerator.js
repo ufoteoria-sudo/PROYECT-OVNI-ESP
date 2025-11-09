@@ -65,6 +65,8 @@ class PDFGenerator {
         this._addSeparator(doc);
         this._addAIAnalysis(doc, analysis);
         this._addSeparator(doc);
+        this._addExternalValidation(doc, analysis);
+        this._addSeparator(doc);
         this._addConclusions(doc, analysis, reportData);
         this._addFooter(doc);
 
@@ -441,6 +443,172 @@ class PDFGenerator {
       });
       doc.moveDown(0.5);
     }
+  }
+
+  /**
+   * Añade validación externa (APIs)
+   */
+  _addExternalValidation(doc, analysis) {
+    const validation = analysis.externalValidation;
+
+    if (!validation || !validation.performed) {
+      return; // No se realizó validación
+    }
+
+    doc
+      .fontSize(14)
+      .font('Helvetica-Bold')
+      .fillColor('#1a365d')
+      .text('VALIDACIÓN EXTERNA CON APIS', { underline: true });
+
+    doc.moveDown(0.5);
+
+    doc.fontSize(11).font('Helvetica').fillColor('#2d3748');
+
+    // Información de la validación
+    doc
+      .font('Helvetica-Bold')
+      .text('Coordenadas verificadas: ', { continued: true })
+      .font('Helvetica')
+      .text(`${validation.coordinates.latitude.toFixed(6)}, ${validation.coordinates.longitude.toFixed(6)}`);
+    doc.moveDown(0.3);
+
+    doc
+      .font('Helvetica-Bold')
+      .text('Fecha y hora validada: ', { continued: true })
+      .font('Helvetica')
+      .text(new Date(validation.timestamp).toLocaleString('es-ES'));
+    doc.moveDown(0.3);
+
+    doc
+      .font('Helvetica-Bold')
+      .text('Coincidencias encontradas: ', { continued: true })
+      .font('Helvetica')
+      .text(`${validation.matchCount}`);
+    doc.moveDown(0.5);
+
+    // Si hay error, mostrarlo
+    if (validation.error) {
+      doc
+        .fillColor('#c53030')
+        .font('Helvetica-Oblique')
+        .text(`Error en validación: ${validation.error}`);
+      doc.moveDown(0.5);
+      return;
+    }
+
+    // Mostrar resumen
+    if (validation.results && validation.results.summary) {
+      doc
+        .fillColor('#2d3748')
+        .font('Helvetica-Bold')
+        .text('Resumen:');
+      doc.moveDown(0.3);
+      doc
+        .font('Helvetica')
+        .text(validation.results.summary, { align: 'justify' });
+      doc.moveDown(0.5);
+    }
+
+    // Mostrar coincidencias de aeronaves
+    if (validation.results?.validations?.aircraft?.matches?.length > 0) {
+      doc
+        .font('Helvetica-Bold')
+        .fillColor('#2b6cb0')
+        .text('Aeronaves detectadas en el área:');
+      doc.moveDown(0.3);
+
+      const aircraft = validation.results.validations.aircraft.matches;
+      aircraft.slice(0, 5).forEach((ac, index) => {
+        doc
+          .fillColor('#2d3748')
+          .font('Helvetica-Bold')
+          .text(`${index + 1}. ${ac.callsign || 'Vuelo sin identificar'}`, { continued: true })
+          .font('Helvetica')
+          .text(` (${ac.origin || 'origen desconocido'})`);
+        
+        doc
+          .font('Helvetica')
+          .text(`   Distancia: ${ac.distance} km | Altitud: ${ac.altitude ? Math.round(ac.altitude) + ' m' : 'N/A'}`);
+        
+        doc
+          .font('Helvetica')
+          .text(`   Velocidad: ${ac.velocity ? Math.round(ac.velocity * 3.6) + ' km/h' : 'N/A'} | Confianza: ${ac.confidence}%`);
+        
+        doc.moveDown(0.3);
+      });
+
+      if (aircraft.length > 5) {
+        doc
+          .font('Helvetica-Oblique')
+          .fillColor('#718096')
+          .text(`... y ${aircraft.length - 5} aeronave(s) más`);
+      }
+      
+      doc.moveDown(0.5);
+    }
+
+    // Mostrar satélites visibles
+    if (validation.results?.validations?.satellites?.matches?.length > 0) {
+      doc
+        .font('Helvetica-Bold')
+        .fillColor('#805ad5')
+        .text('Satélites visibles en el momento:');
+      doc.moveDown(0.3);
+
+      const satellites = validation.results.validations.satellites.matches;
+      satellites.slice(0, 5).forEach((sat, index) => {
+        doc
+          .fillColor('#2d3748')
+          .font('Helvetica-Bold')
+          .text(`${index + 1}. ${sat.name}`, { continued: true })
+          .font('Helvetica')
+          .text(` (NORAD: ${sat.noradId || 'N/A'})`);
+        
+        doc
+          .font('Helvetica')
+          .text(`   Elevación: ${sat.elevation ? sat.elevation.toFixed(1) + '°' : 'N/A'} | Azimut: ${sat.azimuth ? sat.azimuth.toFixed(1) + '°' : 'N/A'}`);
+        
+        doc
+          .font('Helvetica')
+          .text(`   Altitud orbital: ${sat.altitude ? Math.round(sat.altitude) + ' km' : 'N/A'}`);
+        
+        doc.moveDown(0.3);
+      });
+
+      if (satellites.length > 5) {
+        doc
+          .font('Helvetica-Oblique')
+          .fillColor('#718096')
+          .text(`... y ${satellites.length - 5} satélite(s) más`);
+      }
+      
+      doc.moveDown(0.5);
+    }
+
+    // Conclusión de validación
+    doc
+      .fillColor('#1a365d')
+      .font('Helvetica-Bold')
+      .text('Conclusión de validación:');
+    doc.moveDown(0.3);
+
+    let validationConclusion = '';
+    if (validation.matchCount > 0) {
+      validationConclusion = `Se encontraron ${validation.matchCount} objeto(s) conocido(s) en la ubicación y momento del avistamiento. `;
+      validationConclusion += `Con una confianza del ${validation.confidence}%, estos objetos podrían explicar el fenómeno observado. `;
+      validationConclusion += 'Se recomienda revisar las coincidencias detalladas para determinar si corresponden al objeto fotografiado.';
+    } else {
+      validationConclusion = 'No se encontraron objetos conocidos (aeronaves o satélites) en la ubicación y momento del avistamiento que puedan explicar el fenómeno observado. ';
+      validationConclusion += 'Esto aumenta la singularidad del avistamiento.';
+    }
+
+    doc
+      .fillColor('#2d3748')
+      .font('Helvetica')
+      .text(validationConclusion, { align: 'justify' });
+    
+    doc.moveDown(1);
   }
 
   /**
