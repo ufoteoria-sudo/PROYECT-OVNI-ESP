@@ -1416,18 +1416,40 @@
                                         <label class="form-label">Categoría *</label>
                                         <select class="form-select" id="trainingCategory" required>
                                             <option value="">Seleccione...</option>
-                                            <option value="aircraft_commercial">Avión Comercial</option>
-                                            <option value="aircraft_military">Avión Militar</option>
-                                            <option value="drone">Drone</option>
-                                            <option value="helicopter">Helicóptero</option>
-                                            <option value="balloon">Globo/Dirigible</option>
-                                            <option value="satellite">Satélite</option>
-                                            <option value="bird">Ave</option>
-                                            <option value="natural">Fenómeno Natural</option>
-                                            <option value="celestial">Objeto Celeste</option>
-                                            <option value="lens_flare">Destello de Lente</option>
-                                            <option value="weather">Fenómeno Meteorológico</option>
-                                            <option value="unknown">Desconocido</option>
+                                            <optgroup label="Aeronaves">
+                                                <option value="aircraft_commercial">Avión Comercial</option>
+                                                <option value="aircraft_military">Avión Militar</option>
+                                                <option value="aircraft_private">Avión Privado</option>
+                                                <option value="drone">Drone/UAV</option>
+                                                <option value="helicopter">Helicóptero</option>
+                                                <option value="balloon">Globo/Dirigible</option>
+                                                <option value="rocket">Cohete/Lanzadera</option>
+                                            </optgroup>
+                                            <optgroup label="Objetos Espaciales">
+                                                <option value="satellite">Satélite</option>
+                                                <option value="debris">Basura Espacial</option>
+                                                <option value="celestial">Objeto Celeste</option>
+                                            </optgroup>
+                                            <optgroup label="Fenómenos Naturales">
+                                                <option value="natural">Fenómeno Natural</option>
+                                                <option value="weather">Fenómeno Meteorológico</option>
+                                                <option value="atmospheric">Fenómeno Atmosférico</option>
+                                                <option value="bird">Ave/Fauna</option>
+                                            </optgroup>
+                                            <optgroup label="Efectos Ópticos y Artificiales">
+                                                <option value="lens_flare">Destello de Lente</option>
+                                                <option value="reflection_glass">Reflejo en Cristal/Ventana</option>
+                                                <option value="reflection_vehicle">Reflejo en Vehículo</option>
+                                                <option value="artificial_light">Luces Artificiales</option>
+                                                <option value="light_trail">Estela de Luz</option>
+                                                <option value="camera_artifact">Artefacto de Cámara</option>
+                                            </optgroup>
+                                            <optgroup label="Otros">
+                                                <option value="kite">Cometa</option>
+                                                <option value="insect">Insecto</option>
+                                                <option value="unknown">Desconocido</option>
+                                                <option value="other">Otro</option>
+                                            </optgroup>
                                         </select>
                                     </div>
                                 </div>
@@ -1435,14 +1457,22 @@
                                 <div class="mb-3">
                                     <label class="form-label">Tipo / Modelo *</label>
                                     <input type="text" class="form-control" id="trainingType" 
-                                           placeholder="Ej: Boeing 737-800, DJI Phantom 4, ISS" required>
-                                    <div class="form-text">Especifica el modelo o tipo específico del objeto</div>
+                                           placeholder="Ej: Boeing 737, Farola LED, Reflejo parabrisas" required>
+                                    <div class="form-text">Especifica el tipo o modelo específico del objeto</div>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label">Descripción</label>
-                                    <textarea class="form-control" id="trainingDescription" rows="3" 
-                                              placeholder="Contexto adicional, características visuales, condiciones de captura..."></textarea>
+                                    <label class="form-label">Modelo/Variante (Opcional)</label>
+                                    <input type="text" class="form-control" id="trainingModel" 
+                                           placeholder="Ej: 737-800, Phantom 4 Pro, Gen 2">
+                                    <div class="form-text">Variante o versión específica del tipo</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Descripción Detallada</label>
+                                    <textarea class="form-control" id="trainingDescription" rows="4" 
+                                              placeholder="Describe características visuales, condiciones de captura, contexto, colores predominantes, formas, patrones de luz..."></textarea>
+                                    <div class="form-text">Cuanto más detallada, mejor será el entrenamiento del algoritmo</div>
                                 </div>
 
                                 <!-- Preview -->
@@ -3318,6 +3348,7 @@
                 formData.append('image', document.getElementById('trainingImage').files[0]);
                 formData.append('category', document.getElementById('trainingCategory').value);
                 formData.append('type', document.getElementById('trainingType').value);
+                formData.append('model', document.getElementById('trainingModel').value || '');
                 formData.append('description', document.getElementById('trainingDescription').value);
 
                 const response = await fetch(`${API_URL}/api/training`, {

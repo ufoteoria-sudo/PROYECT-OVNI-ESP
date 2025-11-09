@@ -56,6 +56,7 @@ router.post('/', auth, isAdmin, upload.single('image'), async (req, res) => {
     const {
       category,
       type,
+      model,
       description,
       visualFeatures,
       technicalData,
@@ -65,12 +66,12 @@ router.post('/', auth, isAdmin, upload.single('image'), async (req, res) => {
       externalRefs
     } = req.body;
 
-    // Validar campos requeridos
-    if (!category || !type || !description) {
+    // Validar campos requeridos (description ya no es requerido)
+    if (!category || !type) {
       // Eliminar archivo subido si falta información
       await fs.unlink(req.file.path);
       return res.status(400).json({
-        error: 'Faltan campos requeridos: category, type, description'
+        error: 'Faltan campos requeridos: category, type'
       });
     }
 
@@ -137,6 +138,7 @@ router.post('/', auth, isAdmin, upload.single('image'), async (req, res) => {
     const trainingImage = new TrainingImage({
       category,
       type,
+      model: model || null,
       description,
       imageUrl: imageFilename,
       thumbnailUrl: thumbnailFilename,

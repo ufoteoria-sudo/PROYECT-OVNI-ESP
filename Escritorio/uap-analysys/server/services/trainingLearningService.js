@@ -140,19 +140,41 @@ class TrainingLearningService {
     try {
       // Mapeo de categorías del análisis a categorías de entrenamiento
       const categoryMapping = {
+        // Aeronaves
         'aircraft': ['aircraft_commercial', 'aircraft_military', 'aircraft_private'],
         'aircraft_commercial': ['aircraft_commercial'],
         'aircraft_military': ['aircraft_military'],
+        'aircraft_private': ['aircraft_private'],
         'drone': ['drone'],
         'helicopter': ['helicopter'],
         'balloon': ['balloon'],
+        'rocket': ['rocket'],
+        
+        // Espaciales
         'satellite': ['satellite'],
+        'debris': ['debris'],
+        'celestial': ['celestial'],
+        
+        // Naturales
         'bird': ['bird'],
         'natural': ['natural', 'atmospheric'],
-        'celestial': ['celestial'],
-        'lens_flare': ['lens_flare'],
         'weather': ['weather', 'atmospheric'],
-        'unknown': ['unknown', 'other']
+        'atmospheric': ['atmospheric', 'natural', 'weather'],
+        
+        // Efectos ópticos
+        'lens_flare': ['lens_flare', 'reflection_glass', 'reflection_vehicle', 'camera_artifact'],
+        'reflection': ['reflection_glass', 'reflection_vehicle', 'lens_flare'],
+        'reflection_glass': ['reflection_glass', 'reflection_vehicle'],
+        'reflection_vehicle': ['reflection_vehicle', 'reflection_glass'],
+        'artificial_light': ['artificial_light', 'light_trail'],
+        'light_trail': ['light_trail', 'artificial_light'],
+        'camera_artifact': ['camera_artifact', 'lens_flare'],
+        
+        // Otros
+        'kite': ['kite'],
+        'insect': ['insect'],
+        'unknown': ['unknown', 'other'],
+        'other': ['other', 'unknown']
       };
 
       const mappedCategories = categoryMapping[category] || [category];
@@ -177,8 +199,7 @@ class TrainingLearningService {
   /**
    * Compara características visuales de la imagen con las de entrenamiento
    * 
-   * Nota: Esta es una implementación básica. Para producción se recomienda
-   * usar un modelo de ML real (TensorFlow, PyTorch, etc.)
+   * NUEVO: Fusiona análisis visual + análisis textual de descripciones
    */
   async compareVisualFeatures(imagePath, trainingImages) {
     try {
@@ -188,21 +209,36 @@ class TrainingLearningService {
       const comparisons = [];
 
       for (const trainingImg of trainingImages) {
-        // Comparar características si existen
-        const similarity = this.calculateFeatureSimilarity(
+        // 1. SIMILITUD VISUAL (características de imagen)
+        const visualSimilarity = this.calculateFeatureSimilarity(
           imageFeatures,
           trainingImg.visualFeatures,
           trainingImg
         );
 
+        // 2. SIMILITUD TEXTUAL (análisis de descripción)
+        const textualSimilarity = this.calculateTextualSimilarity(
+          trainingImg.description,
+          trainingImg.type,
+          trainingImg.model,
+          trainingImg.category
+        );
+
+        // 3. FUSIÓN: 70% visual + 30% textual
+        const fusedSimilarity = (visualSimilarity * 0.7) + (textualSimilarity * 0.3);
+
+        console.log(`   ${trainingImg.type}: Visual=${visualSimilarity}%, Text=${textualSimilarity}%, Fusión=${fusedSimilarity.toFixed(1)}%`);
+
         comparisons.push({
           trainingImage: trainingImg,
-          similarity,
+          similarity: Math.round(fusedSimilarity),
+          visualScore: visualSimilarity,
+          textualScore: textualSimilarity,
           features: trainingImg.visualFeatures
         });
       }
 
-      // Ordenar por similitud
+      // Ordenar por similitud fusionada
       comparisons.sort((a, b) => b.similarity - a.similarity);
 
       return {
@@ -211,8 +247,11 @@ class TrainingLearningService {
         allMatches: comparisons.map(c => ({
           id: c.trainingImage._id,
           type: c.trainingImage.type,
+          model: c.trainingImage.model,
           category: c.trainingImage.category,
           similarity: c.similarity,
+          visualScore: c.visualScore,
+          textualScore: c.textualScore,
           usageStats: c.trainingImage.usageStats
         }))
       };
@@ -225,6 +264,100 @@ class TrainingLearningService {
         allMatches: []
       };
     }
+  }
+
+  /**
+   * NUEVO: Calcula similitud basada en descripción textual
+   * Analiza keywords, características mencionadas, contexto
+   */
+  calculateTextualSimilarity(description, type, model, category) {
+    if (!description || description.trim().length < 10) {
+      return 50; // Score neutro si no hay descripción
+    }
+
+    let score = 50; // Base
+    const descLower = description.toLowerCase();
+
+    // KEYWORDS DE ALTA RELEVANCIA
+    const keywordGroups = {
+      // Efectos ópticos (35 puntos)
+      optical: {
+        weight: 35,
+        keywords: ['reflejo', 'reflection', 'cristal', 'glass', 'ventana', 'window', 
+                  'parabrisas', 'windshield', 'espejo', 'mirror', 'lens', 'lente']
+      },
+      // Luces artificiales (35 puntos)
+      lights: {
+        weight: 35,
+        keywords: ['luz', 'light', 'farola', 'streetlight', 'led', 'lámpara', 'lamp',
+                  'edificio', 'building', 'torre', 'tower', 'artificial', 'iluminación']
+      },
+      // Características de forma (25 puntos)
+      shape: {
+        weight: 25,
+        keywords: ['redondo', 'round', 'circular', 'elongado', 'triangular', 'rectangular',
+                  'forma', 'shape', 'contorno', 'outline', 'silueta', 'silhouette']
+      },
+      // Movimiento (25 puntos)
+      movement: {
+        weight: 25,
+        keywords: ['rápido', 'fast', 'lento', 'slow', 'estático', 'static', 'movimiento',
+                  'movement', 'trayectoria', 'trajectory', 'velocidad', 'speed']
+      },
+      // Colores (20 puntos)
+      colors: {
+        weight: 20,
+        keywords: ['blanco', 'white', 'rojo', 'red', 'verde', 'green', 'azul', 'blue',
+                  'amarillo', 'yellow', 'naranja', 'orange', 'color', 'bright', 'brillante']
+      },
+      // Condiciones (15 puntos)
+      conditions: {
+        weight: 15,
+        keywords: ['noche', 'night', 'día', 'day', 'nublado', 'cloudy', 'despejado', 'clear',
+                  'oscuro', 'dark', 'claro', 'bright', 'crepúsculo', 'dusk']
+      }
+    };
+
+    // Analizar cada grupo de keywords
+    for (const [groupName, groupData] of Object.entries(keywordGroups)) {
+      let matchCount = 0;
+      for (const keyword of groupData.keywords) {
+        if (descLower.includes(keyword)) {
+          matchCount++;
+        }
+      }
+      
+      if (matchCount > 0) {
+        // Bonus proporcional a coincidencias
+        const bonus = Math.min((matchCount / groupData.keywords.length) * groupData.weight, groupData.weight);
+        score += bonus;
+      }
+    }
+
+    // BONUS: Si menciona el tipo/modelo específico
+    if (type && descLower.includes(type.toLowerCase())) {
+      score += 15;
+    }
+    if (model && descLower.includes(model.toLowerCase())) {
+      score += 10;
+    }
+
+    // BONUS: Descripción larga y detallada (indica calidad)
+    if (description.length > 200) {
+      score += 10;
+    } else if (description.length > 100) {
+      score += 5;
+    }
+
+    // BONUS: Menciona características técnicas
+    const technicalTerms = ['focal', 'iso', 'exposición', 'exposure', 'aperture', 'shutter', 
+                           'mm', 'segundos', 'seconds', 'metros', 'meters'];
+    const technicalMatches = technicalTerms.filter(term => descLower.includes(term)).length;
+    if (technicalMatches > 0) {
+      score += Math.min(technicalMatches * 3, 15);
+    }
+
+    return Math.min(Math.round(score), 95);
   }
 
   /**

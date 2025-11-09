@@ -11,22 +11,37 @@ const trainingImageSchema = new mongoose.Schema({
     type: String,
     required: true,
     enum: [
+      // Aeronaves
       'aircraft_commercial',    // Avión comercial
       'aircraft_military',      // Avión militar
       'aircraft_private',       // Avión privado
       'drone',                  // Dron/UAV
       'helicopter',             // Helicóptero
       'balloon',                // Globo aerostático/meteorológico
+      'rocket',                 // Cohete/lanzadera
+      
+      // Objetos espaciales
       'satellite',              // Satélite artificial
-      'bird',                   // Ave/fauna
-      'natural',                // Fenómeno natural
+      'debris',                 // Basura espacial
       'celestial',              // Objeto celestial (luna, planeta, estrella)
-      'lens_flare',             // Destello de lente
+      
+      // Fenómenos naturales
+      'natural',                // Fenómeno natural
       'weather',                // Fenómeno meteorológico
       'atmospheric',            // Fenómeno atmosférico
+      'bird',                   // Ave/fauna
+      
+      // Efectos ópticos y artificiales
+      'lens_flare',             // Destello de lente
+      'reflection_glass',       // Reflejo en cristal/ventana
+      'reflection_vehicle',     // Reflejo en vehículo (parabrisas, carrocería)
+      'artificial_light',       // Luces artificiales (farolas, edificios, torres)
+      'light_trail',            // Estela de luz (larga exposición)
+      'camera_artifact',        // Artefacto de cámara (sensor, polvo)
+      
+      // Otros
       'kite',                   // Cometa/papalote
-      'rocket',                 // Cohete/lanzadera
-      'debris',                 // Basura espacial
+      'insect',                 // Insecto cerca de lente
       'unknown',                // Desconocido
       'other'                   // Otro objeto identificable
     ]
@@ -40,12 +55,19 @@ const trainingImageSchema = new mongoose.Schema({
     // Ejemplos: "Boeing 737", "DJI Phantom 4", "ISS", "Gaviota", etc.
   },
 
+  // Modelo/variante específica (NUEVO - Más detalle)
+  model: {
+    type: String,
+    trim: true
+    // Ejemplos: "737-800", "Phantom 4 Pro", "Starlink Gen 2", etc.
+  },
+
   // Descripción detallada
   description: {
     type: String,
     required: false,
     trim: true,
-    maxlength: 1000
+    maxlength: 2000  // Aumentado de 1000 a 2000
   },
 
   // Ruta de la imagen en el servidor
