@@ -1625,15 +1625,28 @@
         function displayUserInfo() {
             if (!currentUser) return;
 
+            console.log('👤 Usuario actual:', currentUser);
+            console.log('🔑 Rol:', currentUser.role);
+
             document.getElementById('userName').textContent = currentUser.username;
             document.getElementById('userFirstName').textContent = currentUser.firstName || currentUser.username;
             document.getElementById('userEmail').textContent = currentUser.email;
             document.getElementById('userRole').textContent = currentUser.role === 'admin' ? 'Administrador' : 'Usuario';
             
             // Mostrar/ocultar elementos de administrador
+            const adminElements = document.querySelectorAll('.admin-only');
+            console.log('🔍 Elementos admin encontrados:', adminElements.length);
+            
             if (currentUser.role === 'admin') {
-                document.querySelectorAll('.admin-only').forEach(el => {
-                    el.style.display = '';
+                console.log('✅ Usuario es admin - mostrando elementos');
+                adminElements.forEach(el => {
+                    console.log('  Mostrando elemento:', el);
+                    el.style.removeProperty('display');
+                });
+            } else {
+                console.log('❌ Usuario NO es admin - ocultando elementos');
+                adminElements.forEach(el => {
+                    el.style.display = 'none';
                 });
             }
         }
