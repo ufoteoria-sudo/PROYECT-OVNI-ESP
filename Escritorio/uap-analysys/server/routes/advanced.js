@@ -103,7 +103,7 @@ router.get('/patterns', auth, async (req, res) => {
     const categoryPatterns = await Analysis.aggregate([
       {
         $match: {
-          userId: mongoose.Types.ObjectId(req.user._id),
+          userId: req.user._id,
           status: 'completed',
           createdAt: { $gte: startDate }
         }
@@ -130,7 +130,7 @@ router.get('/patterns', auth, async (req, res) => {
     const locationPatterns = await Analysis.aggregate([
       {
         $match: {
-          userId: mongoose.Types.ObjectId(req.user._id),
+          userId: req.user._id,
           status: 'completed',
           'exifData.gps': { $exists: true },
           createdAt: { $gte: startDate }
@@ -160,7 +160,7 @@ router.get('/patterns', auth, async (req, res) => {
     const timePatterns = await Analysis.aggregate([
       {
         $match: {
-          userId: mongoose.Types.ObjectId(req.user._id),
+          userId: req.user._id,
           status: 'completed',
           createdAt: { $gte: startDate }
         }
@@ -180,7 +180,7 @@ router.get('/patterns', auth, async (req, res) => {
     const objectPatterns = await Analysis.aggregate([
       {
         $match: {
-          userId: mongoose.Types.ObjectId(req.user._id),
+          userId: req.user._id,
           status: 'completed',
           'bestMatch.category': { $exists: true },
           createdAt: { $gte: startDate }
@@ -284,7 +284,7 @@ router.get('/stats', auth, async (req, res) => {
     const confidenceAgg = await Analysis.aggregate([
       {
         $match: {
-          userId: mongoose.Types.ObjectId(req.user._id),
+          userId: req.user._id,
           status: 'completed',
           'aiAnalysis.confidence': { $exists: true },
           createdAt: { $gte: startDate }
@@ -303,7 +303,7 @@ router.get('/stats', auth, async (req, res) => {
     const byStatus = await Analysis.aggregate([
       {
         $match: {
-          userId: mongoose.Types.ObjectId(req.user._id),
+          userId: req.user._id,
           createdAt: { $gte: startDate }
         }
       },
@@ -319,7 +319,7 @@ router.get('/stats', auth, async (req, res) => {
     const confidenceDistribution = await Analysis.aggregate([
       {
         $match: {
-          userId: mongoose.Types.ObjectId(req.user._id),
+          userId: req.user._id,
           status: 'completed',
           'aiAnalysis.confidence': { $exists: true },
           createdAt: { $gte: startDate }
@@ -349,7 +349,7 @@ router.get('/stats', auth, async (req, res) => {
     const hourlyDistribution = await Analysis.aggregate([
       {
         $match: {
-          userId: mongoose.Types.ObjectId(req.user._id),
+          userId: req.user._id,
           createdAt: { $gte: startDate }
         }
       },
@@ -368,7 +368,7 @@ router.get('/stats', auth, async (req, res) => {
     const topCategories = await Analysis.aggregate([
       {
         $match: {
-          userId: mongoose.Types.ObjectId(req.user._id),
+          userId: req.user._id,
           status: 'completed',
           'aiAnalysis.category': { $exists: true },
           createdAt: { $gte: startDate }
@@ -393,7 +393,7 @@ router.get('/stats', auth, async (req, res) => {
     const timeline = await Analysis.aggregate([
       {
         $match: {
-          userId: mongoose.Types.ObjectId(req.user._id),
+          userId: req.user._id,
           createdAt: { $gte: startDate }
         }
       },
