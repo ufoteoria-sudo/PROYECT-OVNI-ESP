@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - UAP Analysis System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 0;
+        }
+        .register-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 550px;
+            width: 100%;
+            margin: 20px 0;
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo i {
+            font-size: 60px;
+            color: #667eea;
+        }
+        .logo h1 {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+            margin-top: 10px;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px;
+            font-weight: 600;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .alert {
+            border-radius: 10px;
+        }
+        .divider {
+            text-align: center;
+            margin: 20px 0;
+            color: #999;
+        }
+        .password-requirements {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .password-requirements i {
+            font-size: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="logo">
+            <i class="bi bi-balloon"></i>
+            <h1>UAP Analysis</h1>
+            <p class="text-muted">Crear una cuenta nueva</p>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <form id="registerForm">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="firstName" class="form-label">
+                        <i class="bi bi-person"></i> Nombre
+                    </label>
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        id="firstName" 
+                        placeholder="Juan"
+                        required
+                    >
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="lastName" class="form-label">
+                        <i class="bi bi-person"></i> Apellido
+                    </label>
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        id="lastName" 
+                        placeholder="Pérez"
+                        required
+                    >
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="username" class="form-label">
+                    <i class="bi bi-at"></i> Nombre de usuario
+                </label>
+                <input 
+                    type="text" 
+                    class="form-control" 
+                    id="username" 
+                    placeholder="juanperez"
+                    required
+                    pattern="[a-zA-Z0-9_]{3,20}"
+                    title="3-20 caracteres, solo letras, números y guión bajo"
+                >
+                <small class="text-muted">3-20 caracteres, solo letras, números y guión bajo</small>
+            </div>
+
+            <div class="mb-3">
+                <label for="email" class="form-label">
+                    <i class="bi bi-envelope"></i> Email
+                </label>
+                <input 
+                    type="email" 
+                    class="form-control" 
+                    id="email" 
+                    placeholder="tu@email.com"
+                    required
+                >
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">
+                    <i class="bi bi-lock"></i> Contraseña
+                </label>
+                <input 
+                    type="password" 
+                    class="form-control" 
+                    id="password" 
+                    placeholder="••••••••"
+                    required
+                    minlength="6"
+                >
+                <div class="password-requirements">
+                    <i class="bi bi-info-circle"></i> Mínimo 6 caracteres
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="confirmPassword" class="form-label">
+                    <i class="bi bi-lock-fill"></i> Confirmar contraseña
+                </label>
+                <input 
+                    type="password" 
+                    class="form-control" 
+                    id="confirmPassword" 
+                    placeholder="••••••••"
+                    required
+                    minlength="6"
+                >
+            </div>
+
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="acceptTerms" required>
+                <label class="form-check-label" for="acceptTerms">
+                    Acepto los términos y condiciones
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100" id="registerBtn">
+                <i class="bi bi-person-plus"></i> Crear cuenta
+            </button>
+        </form>
+
+        <div class="divider">
+            <span>¿Ya tienes cuenta?</span>
+        </div>
+
+        <a href="login.html" class="btn btn-outline-secondary w-100">
+            <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+        </a>
+
+        <div class="text-center mt-3">
+            <a href="index.html" class="text-muted text-decoration-none">
+                <i class="bi bi-arrow-left"></i> Volver al inicio
+            </a>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000';
+
+        // Verificar si ya está logueado
+        if (localStorage.getItem('token')) {
+            window.location.href = 'dashboard.html';
+        }
+
+        function showAlert(message, type = 'danger') {
+            const alertContainer = document.getElementById('alertContainer');
+            alertContainer.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        }
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const acceptTerms = document.getElementById('acceptTerms').checked;
+            const registerBtn = document.getElementById('registerBtn');
+
+            // Validaciones
+            if (!firstName || !lastName || !username || !email || !password || !confirmPassword) {
+                showAlert('Por favor completa todos los campos.');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showAlert('Las contraseñas no coinciden.');
+                return;
+            }
+
+            if (password.length < 6) {
+                showAlert('La contraseña debe tener al menos 6 caracteres.');
+                return;
+            }
+
+            if (!acceptTerms) {
+                showAlert('Debes aceptar los términos y condiciones.');
+                return;
+            }
+
+            // Validar formato de username
+            const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+            if (!usernameRegex.test(username)) {
+                showAlert('El nombre de usuario debe tener 3-20 caracteres (solo letras, números y guión bajo).');
+                return;
+            }
+
+            // Deshabilitar botón
+            registerBtn.disabled = true;
+            registerBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Creando cuenta...';
+
+            try {
+                const response = await fetch(`${API_URL}/api/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        firstName,
+                        lastName,
+                        username,
+                        email,
+                        password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Guardar token y usuario
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+
+                    showAlert('¡Cuenta creada exitosamente! Redirigiendo...', 'success');
+
+                    // Redirigir a dashboard
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1500);
+
+                } else {
+                    // Mostrar error del servidor
+                    if (response.status === 409) {
+                        showAlert(data.error || 'El email o nombre de usuario ya está registrado.');
+                    } else {
+                        showAlert(data.error || 'Error al crear la cuenta. Intenta de nuevo.');
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Error de conexión. Verifica que el servidor esté corriendo.');
+            } finally {
+                // Rehabilitar botón
+                registerBtn.disabled = false;
+                registerBtn.innerHTML = '<i class="bi bi-person-plus"></i> Crear cuenta';
+            }
+        });
+
+        // Validar contraseñas en tiempo real
+        document.getElementById('confirmPassword').addEventListener('input', function() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = this.value;
+
+            if (password && confirmPassword) {
+                if (password !== confirmPassword) {
+                    this.classList.add('is-invalid');
+                    this.classList.remove('is-valid');
+                } else {
+                    this.classList.add('is-valid');
+                    this.classList.remove('is-invalid');
+                }
+            }
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+server/node_modules/
+
+# Environment variables
+.env
+server/.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# Uploads (archivos subidos por usuarios)
+server/uploads/
+uploads/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Workspace (opcional, descomentar si no quieres versionarlo)
+# *.code-workspace

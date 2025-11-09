@@ -1,0 +1,42 @@
+{
+  "name": "uap-server",
+  "version": "1.0.0",
+  "description": "Backend para gestión de usuarios (Express + MongoDB)",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "keywords": [
+    "express",
+    "mongodb",
+    "rest-api",
+    "uap"
+  ],
+  "author": "ufoteoria-sudo",
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.68.0",
+    "archiver": "^7.0.1",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.0",
+    "exif-parser": "^0.1.12",
+    "express": "^4.18.2",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^8.2.1",
+    "express-validator": "^7.3.0",
+    "helmet": "^8.1.0",
+    "hpp": "^0.2.3",
+    "json2csv": "^6.0.0-alpha.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^7.0.0",
+    "multer": "^2.0.2",
+    "openai": "^6.8.1",
+    "pdfkit": "^0.17.2",
+    "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
