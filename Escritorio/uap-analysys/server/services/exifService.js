@@ -255,6 +255,9 @@ async function extractExifData(filePath) {
       exifData.manipulationScore += 35;
     }
     
+    // Limitar el score a un máximo de 100
+    exifData.manipulationScore = Math.min(exifData.manipulationScore, 100);
+    
     if (exifData.manipulationScore > 50) {
       exifData.isManipulated = true;
     }

@@ -7,7 +7,7 @@ const sharp = require('sharp');
 const TrainingImage = require('../models/TrainingImage');
 const auth = require('../middleware/auth');
 const isAdmin = require('../middleware/isAdmin');
-const { logActivity } = require('../middleware/audit');
+const AuditMiddleware = require('../middleware/audit');
 
 // Configuración de multer para subida de imágenes de entrenamiento
 const storage = multer.diskStorage({
@@ -133,12 +133,13 @@ router.post('/', auth, isAdmin, upload.single('image'), async (req, res) => {
     await trainingImage.save();
 
     // Log de auditoría
-    await logActivity(
+    await AuditMiddleware.logAdminAction(
       req.user._id,
       'training_upload',
-      'Imagen de entrenamiento subida',
-      { trainingImageId: trainingImage._id, category, type },
-      'success'
+      'TrainingImage',
+      trainingImage._id,
+      { category, type, description },
+      req
     );
 
     res.status(201).json({
@@ -286,12 +287,13 @@ router.put('/:id', auth, isAdmin, async (req, res) => {
     await image.save();
 
     // Log de auditoría
-    await logActivity(
+    await AuditMiddleware.logAdminAction(
       req.user._id,
       'training_update',
-      'Imagen de entrenamiento actualizada',
-      { trainingImageId: image._id, category: image.category },
-      'success'
+      'TrainingImage',
+      image._id,
+      { category: image.category, type: image.type },
+      req
     );
 
     res.json({
@@ -334,12 +336,13 @@ router.delete('/:id', auth, isAdmin, async (req, res) => {
     await TrainingImage.findByIdAndDelete(req.params.id);
 
     // Log de auditoría
-    await logActivity(
+    await AuditMiddleware.logAdminAction(
       req.user._id,
       'training_delete',
-      'Imagen de entrenamiento eliminada',
-      { trainingImageId: req.params.id, category: image.category },
-      'success'
+      'TrainingImage',
+      req.params.id,
+      { category: image.category },
+      req
     );
 
     res.json({ message: 'Imagen de entrenamiento eliminada exitosamente' });

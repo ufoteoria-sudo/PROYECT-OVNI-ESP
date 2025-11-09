@@ -196,18 +196,20 @@ async function performAnalysis(analysisId) {
     }
 
     // 3.5. VALIDACIÓN EXTERNA (si hay coordenadas GPS y timestamp)
-    if (analysis.exifData?.gps && analysis.exifData.datetime) {
-      const { latitude, longitude } = analysis.exifData.gps;
-      const datetime = analysis.exifData.datetime.original || analysis.exifData.datetime.digitized;
+    if (analysis.exifData?.location && (analysis.exifData.captureDate || analysis.exifData.captureTime)) {
+      const { latitude, longitude, altitude } = analysis.exifData.location;
+      const datetime = analysis.exifData.captureDate || analysis.exifData.captureTime;
       
       if (latitude && longitude && datetime) {
         console.log('🌍 Iniciando validación externa con APIs...');
+        console.log(`   Coordenadas: ${latitude}, ${longitude}`);
+        console.log(`   Fecha/hora: ${datetime}`);
         
         try {
           const validationResult = await externalValidationService.validateSighting(
             { lat: latitude, lng: longitude },
             datetime,
-            analysis.exifData.altitude
+            altitude
           );
 
           // Guardar resultados de validación externa
