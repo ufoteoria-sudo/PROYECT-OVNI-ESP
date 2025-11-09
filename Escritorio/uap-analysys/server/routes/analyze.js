@@ -7,6 +7,7 @@ const scientificComparisonService = require('../services/scientificComparisonSer
 const exifService = require('../services/exifService');
 const NotificationService = require('../services/notificationService');
 const externalValidationService = require('../services/externalValidationService');
+const trainingLearningService = require('../services/trainingLearningService');
 
 // POST /api/analyze/:id - Iniciar análisis de una imagen/video
 router.post('/:id', auth, async (req, res) => {
@@ -156,14 +157,16 @@ async function performAnalysis(analysisId) {
     }
 
     // 2. Analizar con sistema de comparación CIENTÍFICA
-    console.log('� Analizando con comparación científica...');
+    console.log('🔬 Analizando con comparación científica...');
     const analysisResult = await scientificComparisonService.analyzeImageScientifically(
       analysis.filePath,
       analysis.exifData
     );
     
+    let preliminaryAnalysis;
+    
     if (analysisResult.success) {
-      analysis.aiAnalysis = analysisResult.data;
+      preliminaryAnalysis = analysisResult.data;
       console.log(`✅ Análisis completado: ${analysisResult.data.category} (${analysisResult.data.confidence}%)`);
       
       // 3. Asignar mejor coincidencia
@@ -181,7 +184,7 @@ async function performAnalysis(analysisId) {
     } else {
       // Fallback: análisis básico
       console.log('⚠️ Sistema de comparación falló, generando análisis básico...');
-      analysis.aiAnalysis = {
+      preliminaryAnalysis = {
         provider: 'basic',
         model: 'Basic Analysis',
         description: 'Análisis básico realizado. Los datos EXIF están disponibles.',
@@ -192,6 +195,36 @@ async function performAnalysis(analysisId) {
         unusualFeatures: ['Análisis automático no disponible'],
         recommendations: ['Análisis manual recomendado'],
         processedDate: new Date()
+      };
+    }
+
+    // 2.5. MEJORAR CON DATOS DE ENTRENAMIENTO
+    console.log('🎓 Mejorando análisis con datos de entrenamiento...');
+    const trainingEnhancement = await trainingLearningService.enhanceAnalysisWithTraining(
+      analysis.filePath,
+      preliminaryAnalysis,
+      analysis.exifData
+    );
+
+    // Usar análisis mejorado si está disponible
+    if (trainingEnhancement.enhanced) {
+      analysis.aiAnalysis = trainingEnhancement.enhancedAnalysis;
+      console.log(`✨ Análisis mejorado con entrenamiento: confianza aumentada de ${trainingEnhancement.originalAnalysis.confidence}% a ${trainingEnhancement.enhancedAnalysis.confidence}%`);
+      
+      // Guardar datos de mejora para auditoría
+      analysis.trainingEnhancement = {
+        enhanced: true,
+        improvementDelta: trainingEnhancement.improvementDelta,
+        trainingMatchCount: trainingEnhancement.enhancedAnalysis.trainingData?.matchCount || 0,
+        enhancedAt: new Date()
+      };
+    } else {
+      analysis.aiAnalysis = preliminaryAnalysis;
+      console.log('ℹ️ No se pudo mejorar con datos de entrenamiento');
+      
+      analysis.trainingEnhancement = {
+        enhanced: false,
+        reason: trainingEnhancement.error || 'No hay datos de entrenamiento disponibles'
       };
     }
 

@@ -19,11 +19,15 @@ const trainingImageSchema = new mongoose.Schema({
       'balloon',                // Globo aerostático/meteorológico
       'satellite',              // Satélite artificial
       'bird',                   // Ave/fauna
+      'natural',                // Fenómeno natural
       'celestial',              // Objeto celestial (luna, planeta, estrella)
+      'lens_flare',             // Destello de lente
+      'weather',                // Fenómeno meteorológico
       'atmospheric',            // Fenómeno atmosférico
       'kite',                   // Cometa/papalote
       'rocket',                 // Cohete/lanzadera
       'debris',                 // Basura espacial
+      'unknown',                // Desconocido
       'other'                   // Otro objeto identificable
     ]
   },
@@ -39,7 +43,7 @@ const trainingImageSchema = new mongoose.Schema({
   // Descripción detallada
   description: {
     type: String,
-    required: true,
+    required: false,
     trim: true,
     maxlength: 1000
   },

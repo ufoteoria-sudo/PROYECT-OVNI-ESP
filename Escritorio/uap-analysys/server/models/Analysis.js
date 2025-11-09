@@ -322,6 +322,18 @@ const analysisSchema = new mongoose.Schema({
     },
     error: String
   },
+
+  // NUEVO: Mejora con Datos de Entrenamiento
+  trainingEnhancement: {
+    enhanced: {
+      type: Boolean,
+      default: false
+    },
+    improvementDelta: Number, // Cuánto mejoró la confianza
+    trainingMatchCount: Number, // Cuántas imágenes de entrenamiento coincidieron
+    enhancedAt: Date,
+    reason: String // Si no se pudo mejorar, por qué
+  },
   
   // Estado del análisis
   status: {

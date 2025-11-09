@@ -2600,6 +2600,33 @@
                         <h6 class="border-bottom pb-2"><i class="bi bi-robot"></i> Análisis de IA (${aiAnalysis.provider || 'Claude'})</h6>
             `;
 
+            // NUEVO: Indicador de mejora con entrenamiento
+            if (aiAnalysis.enhancedWithTraining && aiAnalysis.trainingData) {
+                const trainingData = aiAnalysis.trainingData;
+                html += `
+                    <div class="alert alert-info mb-3">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-mortarboard-fill"></i> Análisis Mejorado con Datos de Entrenamiento
+                        </h6>
+                        <p class="mb-1">
+                            <strong>Este análisis fue mejorado</strong> usando ${trainingData.matchCount} imagen(es) de referencia de la base de datos de entrenamiento.
+                        </p>
+                        ${trainingData.bestMatch ? `
+                            <div class="mt-2 p-2 bg-light rounded">
+                                <strong>Mejor coincidencia:</strong> ${trainingData.bestMatch.type}
+                                <br><small class="text-muted">
+                                    Similitud: ${trainingData.bestMatch.confidence}% | 
+                                    Categoría: ${trainingData.bestMatch.category}
+                                </small>
+                                ${trainingData.bestMatch.technicalData && trainingData.bestMatch.technicalData.manufacturer ? `
+                                    <br><small><strong>Fabricante:</strong> ${trainingData.bestMatch.technicalData.manufacturer}</small>
+                                ` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+
             if (aiAnalysis.description) {
                 html += `<p class="lead">${aiAnalysis.description}</p>`;
             }
