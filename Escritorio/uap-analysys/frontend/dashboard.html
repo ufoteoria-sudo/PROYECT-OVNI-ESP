@@ -1610,7 +1610,10 @@
                     throw new Error('Token inválido');
                 }
 
-                currentUser = await response.json();
+                const data = await response.json();
+                // El backend devuelve { user: {...} }
+                currentUser = data.user || data;
+                console.log('🔐 Usuario cargado desde /me:', currentUser);
                 displayUserInfo();
                 loadProfileData();
 
