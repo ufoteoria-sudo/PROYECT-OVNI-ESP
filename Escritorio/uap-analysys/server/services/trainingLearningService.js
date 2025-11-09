@@ -51,7 +51,8 @@ class TrainingLearningService {
       // 3. Comparar características visuales
       const visualComparison = await this.compareVisualFeatures(
         imagePath,
-        trainingMatches
+        trainingMatches,
+        preliminaryCategory  // Pasar categoría para penalización
       );
 
       // 4. Calcular confianza mejorada
@@ -180,13 +181,27 @@ class TrainingLearningService {
       const mappedCategories = categoryMapping[category] || [category];
 
       // Buscar imágenes activas y verificadas
-      const trainingImages = await TrainingImage.find({
+      let trainingImages = await TrainingImage.find({
         category: { $in: mappedCategories },
         isActive: true,
         verified: true
       })
       .sort({ 'usageStats.accuracy': -1, 'usageStats.matchCount': -1 })
       .limit(20);
+
+      // FALLBACK: Si no hay resultados, buscar en TODAS las categorías
+      // y dejar que el algoritmo de similitud decida
+      if (trainingImages.length === 0) {
+        console.log(`   ⚠️ No hay imágenes para categoría "${category}", buscando en todas...`);
+        trainingImages = await TrainingImage.find({
+          isActive: true,
+          verified: true
+        })
+        .sort({ 'usageStats.accuracy': -1, 'usageStats.matchCount': -1 })
+        .limit(30); // Buscar más para compensar
+
+        console.log(`   📊 Encontradas ${trainingImages.length} imágenes totales para comparar`);
+      }
 
       return trainingImages;
 
@@ -201,7 +216,7 @@ class TrainingLearningService {
    * 
    * NUEVO: Fusiona análisis visual + análisis textual de descripciones
    */
-  async compareVisualFeatures(imagePath, trainingImages) {
+  async compareVisualFeatures(imagePath, trainingImages, preliminaryCategory = null) {
     try {
       // Extraer características básicas de la imagen analizada
       const imageFeatures = await this.extractBasicFeatures(imagePath);
@@ -225,7 +240,24 @@ class TrainingLearningService {
         );
 
         // 3. FUSIÓN: 70% visual + 30% textual
-        const fusedSimilarity = (visualSimilarity * 0.7) + (textualSimilarity * 0.3);
+        let fusedSimilarity = (visualSimilarity * 0.7) + (textualSimilarity * 0.3);
+
+        // 4. PENALIZACIÓN si la categoría no coincide
+        if (preliminaryCategory && trainingImg.category !== preliminaryCategory) {
+          // Verificar si son categorías relacionadas
+          const relatedCategories = {
+            'drone': ['aircraft_commercial', 'aircraft_military', 'helicopter', 'bird'],
+            'aircraft_commercial': ['drone', 'aircraft_military', 'aircraft_private'],
+            'reflection_glass': ['lens_flare', 'reflection_vehicle', 'artificial_light'],
+            'lens_flare': ['reflection_glass', 'artificial_light', 'camera_artifact']
+          };
+
+          const related = relatedCategories[preliminaryCategory] || [];
+          if (!related.includes(trainingImg.category)) {
+            fusedSimilarity *= 0.7; // Penalización 30% si no relacionadas
+            console.log(`   ⚠️ ${trainingImg.type}: Categoría no relacionada, penalización aplicada`);
+          }
+        }
 
         console.log(`   ${trainingImg.type}: Visual=${visualSimilarity}%, Text=${textualSimilarity}%, Fusión=${fusedSimilarity.toFixed(1)}%`);
 
