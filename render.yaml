@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: uap-backend
+    runtime: node
+    buildCommand: cd Escritorio/uap-analysys/server && npm install
+    startCommand: cd Escritorio/uap-analysys/server && node app.js
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: HF_TOKEN
+        sync: false
+      - key: PORT
+        value: 10000
