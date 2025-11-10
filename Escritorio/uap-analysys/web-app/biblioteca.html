@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca Visual - UAP Analysis System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --background-dark: #1a1a2e;
+            --card-dark: #16213e;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .header-section h1 {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .header-section .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: transform 0.3s ease;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stats-card h3 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .filters-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .nav-tabs {
+            border-bottom: 3px solid #667eea;
+            margin-bottom: 2rem;
+        }
+
+        .nav-tabs .nav-link {
+            color: var(--primary-color);
+            font-weight: 600;
+            border: none;
+            padding: 1rem 2rem;
+        }
+
+        .nav-tabs .nav-link.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .item-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            height: 100%;
+        }
+
+        .item-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .item-card-header {
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .item-card-header h5 {
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .item-card-body {
+            padding: 1.5rem;
+        }
+
+        .item-card-footer {
+            padding: 1rem 1.5rem;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .category-badge {
+            font-size: 0.85rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            padding-left: 3rem;
+            border-radius: 25px;
+            border: 2px solid #667eea;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #667eea;
+            font-size: 1.2rem;
+        }
+
+        .pagination {
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .pagination .page-link {
+            border-radius: 10px;
+            margin: 0 0.25rem;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .pagination .page-link.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+        }
+
+        .detail-modal .modal-content {
+            border-radius: 20px;
+        }
+
+        .detail-modal .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .characteristic-item {
+            background: #f8f9fa;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+        }
+
+        .loader {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .loader .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            border-width: 0.3rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: #ccc;
+            margin-bottom: 1rem;
+        }
+
+        .back-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .filter-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header -->
+        <div class="header-section">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1><i class="bi bi-book"></i> Biblioteca Visual de Fenómenos</h1>
+                    <p class="subtitle">Explora 23 fenómenos atmosféricos y 1,064 objetos identificados</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="dashboard.html" class="back-button">
+                        <i class="bi bi-arrow-left"></i> Volver al Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="row mt-4" id="statsContainer">
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h3 id="totalPhenomena">-</h3>
+                        <p class="mb-0">Fenómenos Atmosféricos</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h3 id="totalObjects">-</h3>
+                        <p class="mb-0">Objetos Científicos</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h3 id="totalCategories">-</h3>
+                        <p class="mb-0">Categorías</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h3>100%</h3>
+                        <p class="mb-0">Verificado</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs Dinámicas -->
+        <ul class="nav nav-tabs" id="categoryTabs" role="tablist">
+            <!-- Las tabs se generarán dinámicamente desde JavaScript -->
+        </ul>
+
+        <!-- Tab Content Dinámico -->
+        <div class="tab-content" id="categoryTabContent">
+            <!-- El contenido de las tabs se generará dinámicamente desde JavaScript -->
+        </div>
+    </div>
+
+    <!-- Modal de Detalle -->
+    <div class="modal fade detail-modal" id="detailModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailModalTitle"></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="detailModalBody">
+                    <!-- Contenido dinámico -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Edición de Objeto -->
+    <div class="modal fade" id="editObjectModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Editar Objeto de Biblioteca</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="editObjectForm" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <input type="hidden" id="edit_objectId">
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="edit_name" class="form-label">Nombre del Objeto *</label>
+                                <input type="text" class="form-control" id="edit_name" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="edit_category" class="form-label">Categoría *</label>
+                                <select class="form-select" id="edit_category" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="Atmospheric">Atmospheric</option>
+                                    <option value="Celestial">Celestial</option>
+                                    <option value="Aerial">Aerial</option>
+                                    <option value="Technological">Technological</option>
+                                    <option value="Unknown">Unknown</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="edit_typology" class="form-label">Tipología/Subtipo</label>
+                                <input type="text" class="form-control" id="edit_typology">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="edit_description" class="form-label">Descripción Detallada *</label>
+                            <textarea class="form-control" id="edit_description" rows="4" required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="edit_keywords" class="form-label">Palabras Clave (Keywords)</label>
+                            <input type="text" class="form-control" id="edit_keywords" placeholder="Separadas por comas">
+                            <small class="text-muted">Ej: esfera, metálica, brillante</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="edit_visualPatterns" class="form-label">Patrones Visuales</label>
+                            <input type="text" class="form-control" id="edit_visualPatterns" placeholder="Tags descriptivos para comparación visual">
+                            <small class="text-muted">Ej: reflectante, movimiento errático, luz pulsante</small>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-header"><strong>Características (Opcional)</strong></div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3 mb-2">
+                                        <label for="edit_shape" class="form-label">Forma</label>
+                                        <input type="text" class="form-control" id="edit_shape" placeholder="Ej: Esférica">
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <label for="edit_size" class="form-label">Tamaño</label>
+                                        <input type="text" class="form-control" id="edit_size" placeholder="Ej: Mediano">
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <label for="edit_speed" class="form-label">Velocidad</label>
+                                        <input type="text" class="form-control" id="edit_speed" placeholder="Ej: Rápido">
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <label for="edit_luminosity" class="form-label">Luminosidad</label>
+                                        <input type="text" class="form-control" id="edit_luminosity" placeholder="Ej: Brillante">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-2">
+                                        <label for="edit_colors" class="form-label">Colores</label>
+                                        <input type="text" class="form-control" id="edit_colors" placeholder="Ej: Plateado, azul">
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <label for="edit_behavior" class="form-label">Comportamiento</label>
+                                        <input type="text" class="form-control" id="edit_behavior" placeholder="Ej: Estacionario con movimientos bruscos">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Galería de Imágenes Existentes -->
+                        <div class="card mb-3">
+                            <div class="card-header"><strong><i class="bi bi-images"></i> Imágenes Actuales</strong></div>
+                            <div class="card-body">
+                                <div id="edit_currentImages" class="row">
+                                    <!-- Se llenará dinámicamente -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Agregar Nuevas Imágenes -->
+                        <div class="card mb-3">
+                            <div class="card-header"><strong><i class="bi bi-cloud-upload"></i> Agregar Nuevas Imágenes (máx 5)</strong></div>
+                            <div class="card-body">
+                                <input type="file" class="form-control" id="edit_newImages" name="newImages" accept="image/*" multiple>
+                                <small class="text-muted">Puedes seleccionar hasta 5 imágenes nuevas. Formatos: JPG, PNG, GIF</small>
+                                <div id="edit_newImagesPreview" class="row mt-3">
+                                    <!-- Preview de nuevas imágenes -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> Los cambios se guardarán inmediatamente y se reflejarán en la biblioteca visual.
+                        </div>
+                        
+                        <div id="editMsg" class="small-msg"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // CORREGIDO: API_URL debe ser solo la URL base del servidor
+        const API_URL = 'http://localhost:3000';
+        
+        let currentPhenomenaPage = 1;
+        let currentObjectsPage = 1;
+        let phenomenaFilters = {};
+        let objectsFilters = { sortBy: 'recent' }; // Por defecto mostrar más recientes primero
+        
+        // Obtener usuario actual del localStorage (si está logueado)
+        let currentUser = null;
+        try {
+            const userData = localStorage.getItem('user');
+            if (userData) {
+                currentUser = JSON.parse(userData);
+            }
+        } catch (error) {
+            console.warn('No se pudo obtener usuario:', error);
+        }
+
+        // Variables globales para categorías
+        let allCategories = [];
+        let categoriesMap = {}; // Para acceso rápido por slug
+        let activeFilters = {}; // { categorySlug: { search: '', sortBy: '', page: 1 } }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadStats();
+            await loadCategoriesDynamic(); // NUEVO: Cargar categorías y generar tabs
+        });
+
+        // NUEVO: Cargar categorías y generar tabs dinámicamente
+        async function loadCategoriesDynamic() {
+            try {
+                const response = await fetch(`${API_URL}/api/categories`);
+                const data = await response.json();
+                
+                if (!data.success) {
+                    console.error('Error cargando categorías');
+                    return;
+                }
+                
+                allCategories = data.data;
+                
+                // Crear mapa para acceso rápido
+                allCategories.forEach(cat => {
+                    categoriesMap[cat.slug] = cat;
+                    activeFilters[cat.slug] = { search: '', sortBy: 'name', page: 1 };
+                });
+                
+                // Generar tabs
+                generateCategoryTabs();
+                
+                // Cargar contenido de la primera tab
+                if (allCategories.length > 0) {
+                    await loadCategoryContent(allCategories[0].slug);
+                }
+                
+            } catch (error) {
+                console.error('Error cargando categorías:', error);
+            }
+        }
+
+        // Generar HTML de las tabs
+        function generateCategoryTabs() {
+            const tabsContainer = document.getElementById('categoryTabs');
+            const contentContainer = document.getElementById('categoryTabContent');
+            
+            tabsContainer.innerHTML = '';
+            contentContainer.innerHTML = '';
+            
+            allCategories.forEach((category, index) => {
+                const isFirst = index === 0;
+                
+                // Crear tab button
+                const tabButton = document.createElement('button');
+                tabButton.className = `nav-link ${isFirst ? 'active' : ''}`;
+                tabButton.id = `${category.slug}-tab`;
+                tabButton.setAttribute('data-bs-toggle', 'tab');
+                tabButton.setAttribute('data-bs-target', `#${category.slug}`);
+                tabButton.setAttribute('type', 'button');
+                tabButton.setAttribute('role', 'tab');
+                tabButton.innerHTML = `${category.icon} ${category.name}`;
+                tabButton.addEventListener('click', () => {
+                    if (document.getElementById(`grid-${category.slug}`).children.length === 0) {
+                        loadCategoryContent(category.slug);
+                    }
+                });
+                
+                const tabItem = document.createElement('li');
+                tabItem.className = 'nav-item';
+                tabItem.setAttribute('role', 'presentation');
+                tabItem.appendChild(tabButton);
+                tabsContainer.appendChild(tabItem);
+                
+                // Crear tab content
+                const tabPane = document.createElement('div');
+                tabPane.className = `tab-pane fade ${isFirst ? 'show active' : ''}`;
+                tabPane.id = category.slug;
+                tabPane.setAttribute('role', 'tabpanel');
+                tabPane.innerHTML = `
+                    <div class="filters-section">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="filter-group">
+                                    <label>Buscar</label>
+                                    <div class="search-box">
+                                        <i class="bi bi-search"></i>
+                                        <input type="text" class="form-control search-input" data-category="${category.slug}" placeholder="Buscar en ${category.name}...">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="filter-group">
+                                    <label>Ordenar por</label>
+                                    <select class="form-select sort-select" data-category="${category.slug}">
+                                        <option value="name">Nombre (A-Z)</option>
+                                        <option value="recent">Más Recientes</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="loader" id="loader-${category.slug}" style="display: none;">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-3">Cargando ${category.name.toLowerCase()}...</p>
+                    </div>
+
+                    <div class="row" id="grid-${category.slug}"></div>
+
+                    <nav id="pagination-${category.slug}"></nav>
+                `;
+                
+                contentContainer.appendChild(tabPane);
+            });
+            
+            // Configurar event listeners después de crear los elementos
+            setupEventListeners();
+        }
+
+        // NUEVO: Configurar event listeners para filtros
+        function setupEventListeners() {
+            // Búsqueda
+            document.querySelectorAll('.search-input').forEach(input => {
+                input.addEventListener('input', debounce((e) => {
+                    const category = e.target.dataset.category;
+                    activeFilters[category].search = e.target.value;
+                    activeFilters[category].page = 1;
+                    loadCategoryContent(category);
+                }, 500));
+            });
+            
+            // Ordenamiento
+            document.querySelectorAll('.sort-select').forEach(select => {
+                select.addEventListener('change', (e) => {
+                    const category = e.target.dataset.category;
+                    activeFilters[category].sortBy = e.target.value;
+                    activeFilters[category].page = 1;
+                    loadCategoryContent(category);
+                });
+            });
+        }
+
+        // NUEVO: Cargar contenido de una categoría específica
+        async function loadCategoryContent(categorySlug) {
+            const category = categoriesMap[categorySlug];
+            if (!category) return;
+            
+            const loader = document.getElementById(`loader-${categorySlug}`);
+            const grid = document.getElementById(`grid-${categorySlug}`);
+            
+            loader.style.display = 'block';
+            grid.innerHTML = '';
+            
+            try {
+                const filters = activeFilters[categorySlug];
+                const params = new URLSearchParams({
+                    page: filters.page,
+                    limit: 12,
+                    category: categorySlug
+                });
+                
+                if (filters.search) params.append('search', filters.search);
+                if (filters.sortBy) params.append('sortBy', filters.sortBy);
+                
+                // Endpoint según el tipo
+                const endpoint = category.type === 'phenomenon' 
+                    ? `/api/library/phenomena`
+                    : `/api/library/objects`;
+                
+                const response = await fetch(`${API_URL}${endpoint}?${params}`);
+                const data = await response.json();
+                
+                loader.style.display = 'none';
+                
+                if (data.success && data.data.length > 0) {
+                    data.data.forEach(item => {
+                        const card = category.type === 'phenomenon' 
+                            ? createPhenomenonCard(item)
+                            : createObjectCard(item);
+                        grid.appendChild(card);
+                    });
+                    
+                    renderPagination(`pagination-${categorySlug}`, data.pagination, (page) => {
+                        activeFilters[categorySlug].page = page;
+                        loadCategoryContent(categorySlug);
+                    });
+                } else {
+                    grid.innerHTML = `<div class="col-12"><div class="empty-state"><i class="bi bi-inbox"></i><p>No se encontraron elementos en ${category.name}</p></div></div>`;
+                }
+            } catch (error) {
+                loader.style.display = 'none';
+                console.error(`Error cargando ${categorySlug}:`, error);
+                grid.innerHTML = '<div class="col-12"><div class="alert alert-danger">Error al cargar contenido</div></div>';
+            }
+        }
+
+        // Cargar estadísticas
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_URL}/api/library/stats`);
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('totalPhenomena').textContent = data.data.phenomena.total;
+                    document.getElementById('totalObjects').textContent = data.data.objects.total;
+                    
+                    // Contar categorías activas (se actualizará con loadCategoriesDynamic)
+                    const categoriesResponse = await fetch(`${API_URL}/api/categories`);
+                    const categoriesData = await categoriesResponse.json();
+                    if (categoriesData.success) {
+                        document.getElementById('totalCategories').textContent = categoriesData.data.length;
+                    }
+                }
+            } catch (error) {
+                console.error('Error cargando estadísticas:', error);
+            }
+        }
+
+        // Cargar categorías
+        async function loadCategories() {
+            try {
+                const [phenomenaRes, objectsRes] = await Promise.all([
+                    fetch(`${API_URL}/api/library/phenomena/stats/categories`),
+                    fetch(`${API_URL}/api/library/objects/stats/categories`)
+                ]);
+
+                const phenomenaData = await phenomenaRes.json();
+                const objectsData = await objectsRes.json();
+
+                if (phenomenaData.success) {
+                    const select = document.getElementById('categoryPhenomena');
+                    phenomenaData.data.forEach(cat => {
+                        const option = document.createElement('option');
+                        option.value = cat.value;
+                        option.textContent = `${cat.label} (${cat.count})`;
+                        select.appendChild(option);
+                    });
+                }
+
+                if (objectsData.success) {
+                    const select = document.getElementById('categoryObjects');
+                    objectsData.data.forEach(cat => {
+                        const option = document.createElement('option');
+                        option.value = cat.value;
+                        option.textContent = `${cat.label} (${cat.count})`;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error cargando categorías:', error);
+            }
+        }
+
+        // Cargar fenómenos
+        async function loadPhenomena() {
+            const loader = document.getElementById('phenomenaLoader');
+            const grid = document.getElementById('phenomenaGrid');
+            
+            loader.style.display = 'block';
+            grid.innerHTML = '';
+
+            try {
+                const params = new URLSearchParams({
+                    page: currentPhenomenaPage,
+                    limit: 12,
+                    ...phenomenaFilters
+                });
+
+                const response = await fetch(`${API_URL}/api/library/phenomena?${params}`);
+                const data = await response.json();
+
+                loader.style.display = 'none';
+
+                if (data.success && data.data.length > 0) {
+                    data.data.forEach(phenomenon => {
+                        grid.appendChild(createPhenomenonCard(phenomenon));
+                    });
+
+                    renderPagination('phenomenaPagination', data.pagination, (page) => {
+                        currentPhenomenaPage = page;
+                        loadPhenomena();
+                    });
+                } else {
+                    grid.innerHTML = '<div class="col-12"><div class="empty-state"><i class="bi bi-inbox"></i><p>No se encontraron fenómenos</p></div></div>';
+                }
+            } catch (error) {
+                loader.style.display = 'none';
+                console.error('Error cargando fenómenos:', error);
+                grid.innerHTML = '<div class="col-12"><div class="alert alert-danger">Error al cargar fenómenos</div></div>';
+            }
+        }
+
+        // Cargar objetos
+        async function loadObjects() {
+            const loader = document.getElementById('objectsLoader');
+            const grid = document.getElementById('objectsGrid');
+            
+            loader.style.display = 'block';
+            grid.innerHTML = '';
+
+            try {
+                const params = new URLSearchParams({
+                    page: currentObjectsPage,
+                    limit: 12,
+                    ...objectsFilters
+                });
+
+                // CORREGIDO: Usar endpoint de biblioteca
+                const response = await fetch(`${API_URL}/api/library/objects?${params}`);
+                const data = await response.json();
+
+                loader.style.display = 'none';
+
+                if (data.success && data.data.length > 0) {
+                    console.log('📊 Objetos cargados:', data.data.length);
+                    console.log('🖼️ Primer objeto:', data.data[0].name, 'Imágenes:', data.data[0].manualImages?.length || 0);
+                    
+                    data.data.forEach(object => {
+                        grid.appendChild(createObjectCard(object));
+                    });
+
+                    renderPagination('objectsPagination', data.pagination, (page) => {
+                        currentObjectsPage = page;
+                        loadObjects();
+                    });
+                } else {
+                    grid.innerHTML = '<div class="col-12"><div class="empty-state"><i class="bi bi-inbox"></i><p>No se encontraron objetos</p></div></div>';
+                }
+            } catch (error) {
+                loader.style.display = 'none';
+                console.error('Error cargando objetos:', error);
+                grid.innerHTML = '<div class="col-12"><div class="alert alert-danger">Error al cargar objetos</div></div>';
+            }
+        }
+
+        // Crear card de fenómeno
+        // Crear card de fenómeno (REDISEÑADA CON INFORMACIÓN COMPLETA)
+        function createPhenomenonCard(phenomenon) {
+            const col = document.createElement('div');
+            col.className = 'col-lg-6 col-xl-4 mb-4';
+
+            const categoryBadge = getCategoryBadge(phenomenon.category);
+            const rarityBadge = getRarityBadge(phenomenon.rarity);
+
+            // Obtener todas las imágenes disponibles
+            const allImages = [];
+            if (phenomenon.images && phenomenon.images.length > 0) {
+                phenomenon.images.forEach(img => {
+                    const imgPath = img.thumbnailUrl || img.url;
+                    const fullUrl = imgPath.startsWith('http') ? imgPath : `${API_URL}${imgPath}`;
+                    allImages.push({ url: fullUrl, description: img.description });
+                });
+            }
+            if (phenomenon.imageUrl) {
+                const fullUrl = phenomenon.imageUrl.startsWith('http') ? phenomenon.imageUrl : `${API_URL}${phenomenon.imageUrl}`;
+                allImages.push({ url: fullUrl, description: 'Imagen principal' });
+            }
+
+            // Galería de imágenes (carrusel si hay múltiples)
+            const imageGalleryHtml = allImages.length > 0 ? `
+                <div class="position-relative" style="height: 280px; overflow: hidden; border-radius: 15px 15px 0 0;">
+                    ${allImages.length > 1 ? `
+                        <div id="carousel-phen-${phenomenon._id}" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-indicators">
+                                ${allImages.map((_, idx) => `
+                                    <button type="button" data-bs-target="#carousel-phen-${phenomenon._id}" data-bs-slide-to="${idx}" 
+                                            ${idx === 0 ? 'class="active" aria-current="true"' : ''} aria-label="Imagen ${idx + 1}"></button>
+                                `).join('')}
+                            </div>
+                            <div class="carousel-inner" style="height: 280px;">
+                                ${allImages.map((img, idx) => `
+                                    <div class="carousel-item ${idx === 0 ? 'active' : ''}" style="height: 280px;">
+                                        <img src="${img.url}" class="d-block w-100" alt="${img.description}" 
+                                             style="height: 280px; object-fit: cover; cursor: pointer;"
+                                             onclick="window.open('${img.url}', '_blank')"
+                                             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%2367eaf0%22 width=%22100%22 height=%22100%22/%3E%3Ctext fill=%22white%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2224%22%3E🌤️%3C/text%3E%3C/svg%3E'">
+                                        <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded">
+                                            <p class="mb-0">${img.description || 'Sin descripción'}</p>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <button class="carousel-control-prev" type="button" data-bs-target="#carousel-phen-${phenomenon._id}" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Anterior</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#carousel-phen-${phenomenon._id}" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Siguiente</span>
+                            </button>
+                        </div>
+                    ` : `
+                        <img src="${allImages[0].url}" alt="${phenomenon.name}" 
+                             style="width: 100%; height: 280px; object-fit: cover; cursor: pointer;"
+                             onclick="window.open('${allImages[0].url}', '_blank')"
+                             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%2367eaf0%22 width=%22100%22 height=%22100%22/%3E%3Ctext fill=%22white%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2224%22%3E🌤️%3C/text%3E%3C/svg%3E'">
+                        <div class="position-absolute bottom-0 start-0 p-2 bg-dark bg-opacity-75 text-white rounded-end" style="font-size: 11px;">
+                            <i class="bi bi-zoom-in"></i> Clic para ampliar
+                        </div>
+                    `}
+                    <div class="position-absolute top-0 end-0 p-2">
+                        <span class="badge bg-info"><i class="bi bi-images"></i> ${allImages.length}</span>
+                    </div>
+                </div>
+            ` : `
+                <div style="width:100%;height:280px;background:linear-gradient(135deg,#67eaf0 0%,#4a9ba2 100%);border-radius:15px 15px 0 0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;">
+                    <i class="bi bi-cloud-sun" style="font-size: 48px;"></i>
+                    <p class="mt-2">Sin imágenes</p>
+                </div>
+            `;
+
+            // Badge de tipo (manual = admin agregó imagen, auto = sin imágenes aún)
+            const typeBadge = allImages.length > 0 ? 
+                '<span class="badge bg-success ms-2"><i class="bi bi-pencil-fill"></i> Auto</span>' : 
+                '<span class="badge bg-secondary ms-2">Sin imágenes</span>';
+
+            col.innerHTML = `
+                <div class="card shadow-sm h-100" style="border-radius: 15px; overflow: hidden;">
+                    ${imageGalleryHtml}
+                    
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0">${phenomenon.name} ${typeBadge}</h5>
+                        </div>
+                        ${categoryBadge}
+                        ${rarityBadge ? `<div class="mt-2">${rarityBadge}</div>` : ''}
+                        
+                        <p class="card-text mt-2" style="font-size: 14px;">${phenomenon.description || 'Sin descripción detallada'}</p>
+                        
+                        ${phenomenon.keywords && phenomenon.keywords.length > 0 ? `
+                            <div class="mb-2">
+                                <small class="text-muted"><i class="bi bi-tags"></i> Patrones:</small><br>
+                                ${phenomenon.keywords.map(kw => `<span class="badge bg-info me-1" style="font-size: 10px;">${kw}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                        
+                        ${phenomenon.visualCharacteristics ? `
+                            <div class="mt-3 p-2" style="background: #f8f9fa; border-radius: 8px; font-size: 13px;">
+                                <strong class="d-block mb-2"><i class="bi bi-list-check"></i> Características:</strong>
+                                ${phenomenon.visualCharacteristics.shape ? `
+                                    <div><i class="bi bi-pentagon text-info"></i> <strong>Forma:</strong> ${phenomenon.visualCharacteristics.shape}</div>
+                                ` : ''}
+                                ${phenomenon.visualCharacteristics.size ? `
+                                    <div><i class="bi bi-arrows-angle-expand text-success"></i> <strong>Tamaño:</strong> ${phenomenon.visualCharacteristics.size || 'desconocido'}</div>
+                                ` : ''}
+                                ${phenomenon.visualCharacteristics.speed ? `
+                                    <div><i class="bi bi-speedometer text-warning"></i> <strong>Velocidad:</strong> ${phenomenon.visualCharacteristics.speed || 'desconocido'}</div>
+                                ` : ''}
+                                ${phenomenon.visualCharacteristics.brightness ? `
+                                    <div><i class="bi bi-brightness-high text-warning"></i> <strong>Luminosidad:</strong> ${phenomenon.visualCharacteristics.brightness || 'desconocido'}</div>
+                                ` : ''}
+                                ${phenomenon.visualCharacteristics.colors && phenomenon.visualCharacteristics.colors.length > 0 ? `
+                                    <div><i class="bi bi-palette text-primary"></i> <strong>Colores:</strong> ${phenomenon.visualCharacteristics.colors.join(', ')}</div>
+                                ` : ''}
+                                ${phenomenon.visualCharacteristics.behavior ? `
+                                    <div><i class="bi bi-arrow-repeat text-info"></i> <strong>Comportamiento:</strong> ${phenomenon.visualCharacteristics.behavior || 'desconocido'}</div>
+                                ` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="card-footer bg-transparent border-top-0 pb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-secondary"><i class="bi bi-geo-alt"></i> ${phenomenon.location || 'Global'}</span>
+                            <div class="btn-group btn-group-sm">
+                                ${currentUser && currentUser.role === 'admin' ? `
+                                    <button class="btn btn-outline-warning" onclick="editPhenomenon('${phenomenon._id}')" title="Editar fenómeno (solo admin)">
+                                        <i class="bi bi-pencil-square"></i> Editar
+                                    </button>
+                                ` : ''}
+                                <button class="btn btn-outline-info" onclick="showPhenomenonDetail('${phenomenon._id}')" title="Ver todos los detalles">
+                                    <i class="bi bi-info-circle"></i> Detalles
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            return col;
+        }
+
+        // Crear card de objeto (REDISEÑADA CON INFORMACIÓN COMPLETA)
+        function createObjectCard(object) {
+            const col = document.createElement('div');
+            col.className = 'col-lg-6 col-xl-4 mb-4';
+
+            const categoryBadge = getCategoryBadge(object.category);
+
+            // Obtener todas las imágenes disponibles
+            const allImages = [];
+            if (object.manualImages && object.manualImages.length > 0) {
+                object.manualImages.forEach(img => {
+                    const imgPath = img.thumbnailUrl || img.url;
+                    const fullUrl = imgPath.startsWith('http') ? imgPath : `${API_URL}${imgPath}`;
+                    allImages.push({ url: fullUrl, description: img.description });
+                });
+            }
+            if (object.imageUrl) {
+                const fullUrl = object.imageUrl.startsWith('http') ? object.imageUrl : `${API_URL}${object.imageUrl}`;
+                allImages.push({ url: fullUrl, description: 'Imagen original' });
+            }
+
+            // Galería de imágenes (carrusel si hay múltiples)
+            const imageGalleryHtml = allImages.length > 0 ? `
+                <div class="position-relative" style="height: 280px; overflow: hidden; border-radius: 15px 15px 0 0;">
+                    ${allImages.length > 1 ? `
+                        <div id="carousel-${object._id}" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-indicators">
+                                ${allImages.map((_, idx) => `
+                                    <button type="button" data-bs-target="#carousel-${object._id}" data-bs-slide-to="${idx}" 
+                                            ${idx === 0 ? 'class="active" aria-current="true"' : ''} aria-label="Imagen ${idx + 1}"></button>
+                                `).join('')}
+                            </div>
+                            <div class="carousel-inner" style="height: 280px;">
+                                ${allImages.map((img, idx) => `
+                                    <div class="carousel-item ${idx === 0 ? 'active' : ''}" style="height: 280px;">
+                                        <img src="${img.url}" class="d-block w-100" alt="${img.description}" 
+                                             style="height: 280px; object-fit: cover; cursor: pointer;"
+                                             onclick="window.open('${img.url}', '_blank')"
+                                             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23667eea%22 width=%22100%22 height=%22100%22/%3E%3Ctext fill=%22white%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2224%22%3E📷%3C/text%3E%3C/svg%3E'">
+                                        <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded">
+                                            <p class="mb-0">${img.description || 'Sin descripción'}</p>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <button class="carousel-control-prev" type="button" data-bs-target="#carousel-${object._id}" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Anterior</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#carousel-${object._id}" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Siguiente</span>
+                            </button>
+                        </div>
+                    ` : `
+                        <img src="${allImages[0].url}" alt="${object.name}" 
+                             style="width: 100%; height: 280px; object-fit: cover; cursor: pointer;"
+                             onclick="window.open('${allImages[0].url}', '_blank')"
+                             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23667eea%22 width=%22100%22 height=%22100%22/%3E%3Ctext fill=%22white%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2224%22%3E📷%3C/text%3E%3C/svg%3E'">
+                        <div class="position-absolute bottom-0 start-0 p-2 bg-dark bg-opacity-75 text-white rounded-end" style="font-size: 11px;">
+                            <i class="bi bi-zoom-in"></i> Clic para ampliar
+                        </div>
+                    `}
+                    <div class="position-absolute top-0 end-0 p-2">
+                        <span class="badge bg-info"><i class="bi bi-images"></i> ${allImages.length}</span>
+                    </div>
+                </div>
+            ` : `
+                <div style="width:100%;height:280px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:15px 15px 0 0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;">
+                    <i class="bi bi-image" style="font-size: 48px;"></i>
+                    <p class="mt-2">Sin imágenes</p>
+                </div>
+            `;
+
+            // Badge de tipo
+            const typeBadge = object.isManualEntry ? 
+                '<span class="badge bg-success ms-2"><i class="bi bi-pencil-fill"></i> Manual</span>' : 
+                '<span class="badge bg-secondary ms-2"><i class="bi bi-robot"></i> Auto</span>';
+
+            col.innerHTML = `
+                <div class="card shadow-sm h-100" style="border-radius: 15px; overflow: hidden;">
+                    ${imageGalleryHtml}
+                    
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0">${object.name}${typeBadge}</h5>
+                        </div>
+                        ${categoryBadge}
+                        
+                        ${object.typology ? `<p class="text-muted small mt-2 mb-2"><i class="bi bi-tag"></i> ${object.typology}</p>` : ''}
+                        
+                        <p class="card-text mt-2" style="font-size: 14px;">${object.description || 'Sin descripción detallada'}</p>
+                        
+                        ${object.keywords && object.keywords.length > 0 ? `
+                            <div class="mb-2">
+                                ${object.keywords.map(kw => `<span class="badge bg-light text-dark me-1" style="font-size: 11px;">#${kw}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                        
+                        ${object.visualPatterns && object.visualPatterns.length > 0 ? `
+                            <div class="mb-2">
+                                <small class="text-muted"><i class="bi bi-eye"></i> Patrones:</small><br>
+                                ${object.visualPatterns.map(vp => `<span class="badge bg-info me-1" style="font-size: 10px;">${vp}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                        
+                        ${object.characteristics && Object.keys(object.characteristics).length > 0 ? `
+                            <div class="mt-3 p-2" style="background: #f8f9fa; border-radius: 8px; font-size: 13px;">
+                                <strong class="d-block mb-2"><i class="bi bi-list-check"></i> Características:</strong>
+                                ${object.characteristics.shape ? `<div><i class="bi bi-pentagon text-primary"></i> <strong>Forma:</strong> ${object.characteristics.shape}</div>` : ''}
+                                ${object.characteristics.size ? `<div><i class="bi bi-arrows-angle-expand text-success"></i> <strong>Tamaño:</strong> ${object.characteristics.size}</div>` : ''}
+                                ${object.characteristics.speed ? `<div><i class="bi bi-speedometer text-warning"></i> <strong>Velocidad:</strong> ${object.characteristics.speed}</div>` : ''}
+                                ${object.characteristics.luminosity ? `<div><i class="bi bi-brightness-high text-warning"></i> <strong>Luminosidad:</strong> ${object.characteristics.luminosity}</div>` : ''}
+                                ${object.characteristics.colors ? `<div><i class="bi bi-palette text-danger"></i> <strong>Colores:</strong> ${Array.isArray(object.characteristics.colors) ? object.characteristics.colors.join(', ') : object.characteristics.colors}</div>` : ''}
+                                ${object.characteristics.color && Array.isArray(object.characteristics.color) ? `<div><i class="bi bi-palette text-danger"></i> <strong>Colores:</strong> ${object.characteristics.color.join(', ')}</div>` : ''}
+                                ${object.characteristics.behavior ? `<div><i class="bi bi-graph-up text-info"></i> <strong>Comportamiento:</strong> ${object.characteristics.behavior}</div>` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="card-footer bg-transparent border-top-0 pb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-secondary"><i class="bi bi-calendar3"></i> ${object.frequency || 'N/A'}</span>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" onclick="editObjectInline('${object._id}')" title="Editar objeto y gestionar imágenes">
+                                    <i class="bi bi-pencil-square"></i> Editar
+                                </button>
+                                <button class="btn btn-outline-info" onclick="showObjectDetail('${object._id}')" title="Ver todos los detalles">
+                                    <i class="bi bi-info-circle"></i> Detalles
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            return col;
+        }
+
+        // Mostrar detalle de fenómeno
+        async function showPhenomenonDetail(id) {
+            try {
+                const response = await fetch(`${API_URL}/api/library/phenomena/${id}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const phenomenon = data.data;
+                    document.getElementById('detailModalTitle').textContent = phenomenon.name;
+                    document.getElementById('detailModalBody').innerHTML = generatePhenomenonDetail(phenomenon);
+                    new bootstrap.Modal(document.getElementById('detailModal')).show();
+                } else {
+                    alert('Error: ' + (data.message || 'No se pudo cargar el fenómeno'));
+                }
+            } catch (error) {
+                console.error('Error cargando detalle del fenómeno:', error);
+                alert('Error al cargar los detalles del fenómeno. Por favor, intenta de nuevo.');
+            }
+        }
+
+        // Editar fenómeno (redirige al panel de administración)
+        function editPhenomenon(id) {
+            if (!currentUser || currentUser.role !== 'admin') {
+                alert('Solo los administradores pueden editar fenómenos atmosféricos');
+                return;
+            }
+            
+            // Guardar el ID en localStorage para que el admin lo edite
+            localStorage.setItem('editPhenomenonId', id);
+            window.location.href = 'admin-biblioteca.html?tab=phenomena&edit=' + id;
+        }
+
+        // Mostrar detalle de objeto
+        async function showObjectDetail(id) {
+            try {
+                // CORREGIDO: Usar endpoint de biblioteca
+                const response = await fetch(`${API_URL}/api/library/objects/${id}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const object = data.data;
+                    document.getElementById('detailModalTitle').textContent = object.name;
+                    document.getElementById('detailModalBody').innerHTML = generateObjectDetail(object);
+                    new bootstrap.Modal(document.getElementById('detailModal')).show();
+                } else {
+                    alert('Error: ' + (data.message || 'No se pudo cargar el objeto'));
+                }
+            } catch (error) {
+                console.error('Error cargando detalle del objeto:', error);
+                alert('Error al cargar los detalles del objeto. Por favor, intenta de nuevo.');
+            }
+        }
+
+        // Generar HTML de detalle de fenómeno
+        function generatePhenomenonDetail(p) {
+            // Construir galería de imágenes
+            let imagesHtml = '';
+            const allImages = [];
+
+            // Agregar imágenes del array images[] (nuevo campo)
+            if (p.images && p.images.length > 0) {
+                p.images.forEach((img, index) => {
+                    const imgUrl = img.url.startsWith('http') ? img.url : `${API_URL}${img.url}`;
+                    allImages.push({
+                        url: imgUrl,
+                        description: img.description || `Imagen ${index + 1}`,
+                        uploadedAt: img.uploadedAt
+                    });
+                });
+            }
+
+            // Agregar imagen legacy imageUrl si existe
+            if (p.imageUrl) {
+                const imgUrl = p.imageUrl.startsWith('http') ? p.imageUrl : `${API_URL}${p.imageUrl}`;
+                allImages.push({
+                    url: imgUrl,
+                    description: 'Imagen principal',
+                    type: 'legacy'
+                });
+            }
+
+            // Agregar referenceImages legacy
+            if (p.referenceImages && p.referenceImages.length > 0) {
+                p.referenceImages.forEach((imgUrl, index) => {
+                    allImages.push({
+                        url: imgUrl,
+                        description: `Imagen de referencia ${index + 1}`,
+                        type: 'reference'
+                    });
+                });
+            }
+
+            if (allImages.length > 0) {
+                imagesHtml = `
+                    <h6><i class="bi bi-images"></i> Galería de Imágenes (${allImages.length})</h6>
+                    <div class="row g-3 mb-4">
+                        ${allImages.map((img, idx) => `
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <img src="${img.url}" 
+                                         class="card-img-top" 
+                                         style="height: 200px; object-fit: cover; cursor: pointer; background: #f0f0f0;"
+                                         alt="${img.description}"
+                                         onclick="window.open('${img.url}', '_blank')"
+                                         onerror="this.onerror=null; this.style.display='none'; this.parentElement.innerHTML='<div style=\\'height:200px;background:#e9ecef;display:flex;align-items:center;justify-content:center;color:#999;\\'><i class=\\'bi bi-image\\' style=\\'font-size:48px;\\'></i></div>';">
+                                    <div class="card-body p-2">
+                                        <small class="text-muted d-block">${img.description}</small>
+                                        ${img.uploadedAt ? `<small class="d-block text-muted mt-1"><i class="bi bi-calendar"></i> ${new Date(img.uploadedAt).toLocaleDateString('es-ES')}</small>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <hr>
+                `;
+            }
+
+            return `
+                ${imagesHtml}
+                <div class="row">
+                    <div class="col-12">
+                        <p class="lead">${p.description}</p>
+                        ${getCategoryBadge(p.category)}
+                        ${getRarityBadge(p.rarity)}
+                    </div>
+                </div>
+                <hr>
+                <h6><i class="bi bi-eye"></i> Características Visuales</h6>
+                ${p.visualCharacteristics ? `
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6"><div class="characteristic-item"><strong>Forma:</strong> ${p.visualCharacteristics.shape || 'N/A'}</div></div>
+                        <div class="col-md-6"><div class="characteristic-item"><strong>Colores:</strong> ${p.visualCharacteristics.colors?.join(', ') || 'N/A'}</div></div>
+                        <div class="col-md-6"><div class="characteristic-item"><strong>Brillo:</strong> ${p.visualCharacteristics.brightness || 'N/A'}</div></div>
+                        <div class="col-md-6"><div class="characteristic-item"><strong>Duración:</strong> ${p.visualCharacteristics.duration || 'N/A'}</div></div>
+                    </div>
+                ` : '<p class="text-muted">No disponible</p>'}
+                
+                <h6><i class="bi bi-geo-alt"></i> Condiciones de Ocurrencia</h6>
+                ${p.occurrenceConditions ? `
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6"><div class="characteristic-item"><strong>Frecuencia:</strong> ${p.occurrenceConditions.frequency || 'N/A'}</div></div>
+                        <div class="col-md-6"><div class="characteristic-item"><strong>Época:</strong> ${p.occurrenceConditions.season || 'N/A'}</div></div>
+                        <div class="col-md-12"><div class="characteristic-item"><strong>Ubicaciones:</strong> ${p.occurrenceConditions.location?.join(', ') || 'N/A'}</div></div>
+                    </div>
+                ` : '<p class="text-muted">No disponible</p>'}
+
+                ${p.keywords && p.keywords.length > 0 ? `
+                    <h6><i class="bi bi-tags"></i> Palabras Clave</h6>
+                    <p>${p.keywords.map(k => `<span class="badge bg-secondary">${k}</span>`).join(' ')}</p>
+                ` : ''}
+            `;
+        }
+
+        // Generar HTML de detalle de objeto
+        function generateObjectDetail(o) {
+            // Construir galería de imágenes
+            let imagesHtml = '';
+            const allImages = [];
+
+            // Agregar imagen original si existe
+            if (o.imageUrl) {
+                const imgUrl = o.imageUrl.startsWith('http') ? o.imageUrl : `${API_URL}${o.imageUrl}`;
+                allImages.push({
+                    url: imgUrl,
+                    description: 'Imagen original',
+                    type: 'original'
+                });
+            }
+
+            // Agregar imágenes manuales
+            if (o.manualImages && o.manualImages.length > 0) {
+                o.manualImages.forEach((img, index) => {
+                    const imgUrl = img.url.startsWith('http') ? img.url : `${API_URL}${img.url}`;
+                    allImages.push({
+                        url: imgUrl,
+                        description: img.description || `Imagen adicional ${index + 1}`,
+                        type: 'manual',
+                        uploadedAt: img.uploadedAt
+                    });
+                });
+            }
+
+            if (allImages.length > 0) {
+                imagesHtml = `
+                    <h6><i class="bi bi-images"></i> Galería de Imágenes (${allImages.length})</h6>
+                    <div class="row g-3 mb-4">
+                        ${allImages.map((img, idx) => `
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <img src="${img.url}" 
+                                         class="card-img-top" 
+                                         style="height: 200px; object-fit: cover; cursor: pointer; background: #f0f0f0;"
+                                         alt="${img.description}"
+                                         onclick="window.open('${img.url}', '_blank')"
+                                         onerror="this.onerror=null; this.style.display='none'; this.parentElement.innerHTML='<div style=\\'height:200px;background:#e9ecef;display:flex;align-items:center;justify-content:center;color:#999;\\'><i class=\\'bi bi-image\\' style=\\'font-size:48px;\\'></i></div>';">
+                                    <div class="card-body p-2">
+                                        <small class="text-muted d-block">${img.description}</small>
+                                        ${img.type === 'manual' ? '<span class="badge bg-success">Agregada manualmente</span>' : '<span class="badge bg-secondary">Original</span>'}
+                                        ${img.uploadedAt ? `<small class="d-block text-muted mt-1">Subida: ${new Date(img.uploadedAt).toLocaleDateString('es-ES')}</small>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <hr>
+                `;
+            } else {
+                // Mensaje cuando no hay imágenes
+                imagesHtml = `
+                    <div class="alert alert-info mb-4">
+                        <i class="bi bi-info-circle"></i> Este objeto no tiene imágenes asociadas aún.
+                    </div>
+                `;
+            }
+
+            return `
+                ${imagesHtml}
+                <div class="row">
+                    <div class="col-12">
+                        <p class="lead">${o.description}</p>
+                        ${getCategoryBadge(o.category)}
+                        ${o.isVerified ? '<span class="badge bg-success">✓ Verificado</span>' : ''}
+                        ${o.isManualEntry ? '<span class="badge bg-info"><i class="bi bi-pencil"></i> Editado por administrador</span>' : ''}
+                        ${o.typology ? `<span class="badge bg-secondary">${o.typology}</span>` : ''}
+                    </div>
+                </div>
+                <hr>
+                
+                ${o.keywords && o.keywords.length > 0 ? `
+                    <h6><i class="bi bi-tags"></i> Palabras Clave</h6>
+                    <div class="mb-3">
+                        ${o.keywords.map(k => `<span class="badge bg-primary me-1 mb-1">${k}</span>`).join('')}
+                    </div>
+                ` : ''}
+                
+                <h6><i class="bi bi-pentagon"></i> Características</h6>
+                ${o.characteristics ? `
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6"><div class="characteristic-item"><strong>Forma:</strong> ${o.characteristics.shape || 'N/A'}</div></div>
+                        <div class="col-md-6"><div class="characteristic-item"><strong>Colores:</strong> ${o.characteristics.colors || o.characteristics.color?.join(', ') || 'N/A'}</div></div>
+                        <div class="col-md-6"><div class="characteristic-item"><strong>Tamaño:</strong> ${o.characteristics.size || 'N/A'}</div></div>
+                        <div class="col-md-6"><div class="characteristic-item"><strong>Velocidad:</strong> ${o.characteristics.speed || 'N/A'}</div></div>
+                        <div class="col-md-12"><div class="characteristic-item"><strong>Comportamiento:</strong> ${o.characteristics.behavior || 'N/A'}</div></div>
+                        <div class="col-md-12"><div class="characteristic-item"><strong>Luminosidad:</strong> ${o.characteristics.luminosity || 'N/A'}</div></div>
+                    </div>
+                ` : '<p class="text-muted">No disponible</p>'}
+                
+                <h6><i class="bi bi-eye"></i> Patrones Visuales</h6>
+                ${o.visualPatterns && o.visualPatterns.length > 0 ? `
+                    <ul>
+                        ${o.visualPatterns.map(p => `<li>${p}</li>`).join('')}
+                    </ul>
+                ` : '<p class="text-muted">No disponible</p>'}
+
+                <h6><i class="bi bi-info-circle"></i> Información Adicional</h6>
+                <div class="row g-2">
+                    <div class="col-md-6"><div class="characteristic-item"><strong>Frecuencia:</strong> ${o.frequency || 'N/A'}</div></div>
+                    <div class="col-md-6"><div class="characteristic-item"><strong>Altitud:</strong> ${o.altitude || 'N/A'}</div></div>
+                    <div class="col-md-12"><div class="characteristic-item"><strong>Momento del día:</strong> ${o.timeOfDay?.join(', ') || 'N/A'}</div></div>
+                    ${o.scientificName ? `<div class="col-md-12"><div class="characteristic-item"><strong>Nombre científico:</strong> ${o.scientificName}</div></div>` : ''}
+                </div>
+
+                ${o.verificationSource ? `
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-check-circle"></i> <strong>Fuente de verificación:</strong> ${o.verificationSource}
+                    </div>
+                ` : ''}
+
+                ${o.editHistory && o.editHistory.length > 0 ? `
+                    <div class="alert alert-secondary mt-3">
+                        <strong><i class="bi bi-clock-history"></i> Historial de Ediciones:</strong>
+                        <ul class="mb-0 mt-2">
+                            ${o.editHistory.slice(-3).reverse().map(edit => `
+                                <li><small>${new Date(edit.editedAt).toLocaleString('es-ES')}: ${edit.changes.join(', ')}</small></li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        // Renderizar paginación
+        function renderPagination(containerId, pagination, callback) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            if (pagination.pages <= 1) return;
+
+            const nav = document.createElement('ul');
+            nav.className = 'pagination';
+
+            // Botón anterior
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${pagination.page === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = '<a class="page-link" href="#"><i class="bi bi-chevron-left"></i></a>';
+            if (pagination.page > 1) {
+                prevLi.querySelector('a').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    callback(pagination.page - 1);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
+            nav.appendChild(prevLi);
+
+            // Páginas
+            for (let i = 1; i <= pagination.pages; i++) {
+                if (i === 1 || i === pagination.pages || (i >= pagination.page - 2 && i <= pagination.page + 2)) {
+                    const li = document.createElement('li');
+                    li.className = `page-item ${i === pagination.page ? 'active' : ''}`;
+                    li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+                    li.querySelector('a').addEventListener('click', (e) => {
+                        e.preventDefault();
+                        callback(i);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    });
+                    nav.appendChild(li);
+                } else if (i === pagination.page - 3 || i === pagination.page + 3) {
+                    const li = document.createElement('li');
+                    li.className = 'page-item disabled';
+                    li.innerHTML = '<span class="page-link">...</span>';
+                    nav.appendChild(li);
+                }
+            }
+
+            // Botón siguiente
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${pagination.page === pagination.pages ? 'disabled' : ''}`;
+            nextLi.innerHTML = '<a class="page-link" href="#"><i class="bi bi-chevron-right"></i></a>';
+            if (pagination.page < pagination.pages) {
+                nextLi.querySelector('a').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    callback(pagination.page + 1);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
+            nav.appendChild(nextLi);
+
+            container.appendChild(nav);
+        }
+
+        // Utilidades
+        function getCategoryBadge(category) {
+            const badges = {
+                'optical': '<span class="category-badge bg-info">Óptico</span>',
+                'meteorological': '<span class="category-badge bg-primary">Meteorológico</span>',
+                'astronomical': '<span class="category-badge bg-warning">Astronómico</span>',
+                'electrical': '<span class="category-badge bg-danger">Eléctrico</span>',
+                'cloud': '<span class="category-badge bg-secondary">Nuboso</span>',
+                'aircraft': '<span class="category-badge bg-primary">✈️ Aeronave</span>',
+                'bird': '<span class="category-badge bg-success">🦅 Ave</span>',
+                'drone': '<span class="category-badge bg-info">🚁 Drone</span>',
+                'celestial': '<span class="category-badge bg-warning">🌟 Celeste</span>',
+                'balloon': '<span class="category-badge bg-secondary">🎈 Globo</span>',
+                'satellite': '<span class="category-badge bg-dark">🛰️ Satélite</span>',
+                'natural': '<span class="category-badge bg-success">🌿 Natural</span>',
+                'debris': '<span class="category-badge bg-danger">🗑️ Basura</span>',
+                'uap': '<span class="category-badge bg-danger">🛸 UAP</span>'
+            };
+            return badges[category] || `<span class="category-badge bg-secondary">${category}</span>`;
+        }
+
+        function getRarityBadge(rarity) {
+            const badges = {
+                'very_common': '<span class="badge bg-success">Muy Común</span>',
+                'common': '<span class="badge bg-info">Común</span>',
+                'uncommon': '<span class="badge bg-warning">Poco Común</span>',
+                'rare': '<span class="badge bg-danger">Raro</span>',
+                'very_rare': '<span class="badge bg-dark">Muy Raro</span>'
+            };
+            return badges[rarity] || '';
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // ==================== FUNCIONES DE EDICIÓN INLINE ====================
+        
+        async function editObjectInline(objectId) {
+            try {
+                // Cargar datos del objeto
+                const response = await fetch(`${API_URL}/api/library/objects/${objectId}`);
+                const data = await response.json();
+                
+                if (!data.success) {
+                    alert('Error cargando objeto');
+                    return;
+                }
+                
+                const object = data.data;
+                
+                // Llenar formulario
+                document.getElementById('edit_objectId').value = object._id;
+                document.getElementById('edit_name').value = object.name || '';
+                document.getElementById('edit_category').value = object.category || '';
+                document.getElementById('edit_typology').value = object.typology || '';
+                document.getElementById('edit_description').value = object.description || '';
+                document.getElementById('edit_keywords').value = object.keywords ? object.keywords.join(', ') : '';
+                document.getElementById('edit_visualPatterns').value = object.visualPatterns ? object.visualPatterns.join(', ') : '';
+                
+                // Características
+                if (object.characteristics) {
+                    document.getElementById('edit_shape').value = object.characteristics.shape || '';
+                    document.getElementById('edit_size').value = object.characteristics.size || '';
+                    document.getElementById('edit_speed').value = object.characteristics.speed || '';
+                    document.getElementById('edit_luminosity').value = object.characteristics.luminosity || '';
+                    document.getElementById('edit_colors').value = object.characteristics.colors || '';
+                    document.getElementById('edit_behavior').value = object.characteristics.behavior || '';
+                }
+                
+                // Mostrar imágenes actuales
+                const currentImagesDiv = document.getElementById('edit_currentImages');
+                currentImagesDiv.innerHTML = '';
+                
+                if (object.manualImages && object.manualImages.length > 0) {
+                    object.manualImages.forEach((img, index) => {
+                        const imgUrl = img.thumbnailUrl || img.url;
+                        const fullUrl = imgUrl.startsWith('http') ? imgUrl : `${API_URL}${imgUrl}`;
+                        
+                        currentImagesDiv.innerHTML += `
+                            <div class="col-md-3 mb-3 position-relative">
+                                <img src="${fullUrl}" class="img-fluid rounded" alt="Imagen ${index + 1}" 
+                                     style="cursor: pointer; border: 2px solid #ddd; max-height: 150px; width: 100%; object-fit: cover;"
+                                     onclick="window.open('${fullUrl}', '_blank')">
+                                <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1" 
+                                        onclick="deleteImage('${object._id}', '${img._id}')" title="Eliminar imagen">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                <small class="d-block text-muted mt-1">${img.description || 'Sin descripción'}</small>
+                            </div>
+                        `;
+                    });
+                } else {
+                    currentImagesDiv.innerHTML = '<p class="text-muted">Este objeto no tiene imágenes aún.</p>';
+                }
+                
+                // Preview de nuevas imágenes
+                document.getElementById('edit_newImages').addEventListener('change', function(e) {
+                    const previewDiv = document.getElementById('edit_newImagesPreview');
+                    previewDiv.innerHTML = '';
+                    
+                    const files = Array.from(e.target.files).slice(0, 5);
+                    files.forEach((file, index) => {
+                        const reader = new FileReader();
+                        reader.onload = function(event) {
+                            previewDiv.innerHTML += `
+                                <div class="col-md-3 mb-3">
+                                    <img src="${event.target.result}" class="img-fluid rounded" alt="Nueva ${index + 1}" 
+                                         style="border: 2px solid #28a745; max-height: 150px; width: 100%; object-fit: cover;">
+                                    <small class="d-block text-success mt-1">Nueva imagen ${index + 1}</small>
+                                </div>
+                            `;
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                });
+                
+                // Mostrar modal
+                new bootstrap.Modal(document.getElementById('editObjectModal')).show();
+                
+            } catch (error) {
+                console.error('Error cargando objeto para edición:', error);
+                alert('Error cargando objeto para edición');
+            }
+        }
+
+        // Eliminar imagen
+        async function deleteImage(objectId, imageId) {
+            if (!confirm('¿Estás seguro de eliminar esta imagen?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/api/library/objects/${objectId}/images/${imageId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Imagen eliminada correctamente');
+                    editObjectInline(objectId); // Recargar el modal
+                } else {
+                    alert('Error eliminando imagen: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error eliminando imagen');
+            }
+        }
+
+        // Guardar cambios del objeto
+        document.getElementById('editObjectForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const objectId = document.getElementById('edit_objectId').value;
+            const msgDiv = document.getElementById('editMsg');
+            
+            try {
+                const formData = new FormData();
+                formData.append('name', document.getElementById('edit_name').value);
+                formData.append('category', document.getElementById('edit_category').value);
+                formData.append('typology', document.getElementById('edit_typology').value || '');
+                formData.append('description', document.getElementById('edit_description').value);
+                
+                // Keywords
+                const keywords = document.getElementById('edit_keywords').value
+                    .split(',')
+                    .map(k => k.trim())
+                    .filter(k => k.length > 0);
+                formData.append('keywords', JSON.stringify(keywords));
+                
+                // Visual Patterns
+                const visualPatterns = document.getElementById('edit_visualPatterns').value
+                    .split(',')
+                    .map(vp => vp.trim())
+                    .filter(vp => vp.length > 0);
+                formData.append('visualPatterns', JSON.stringify(visualPatterns));
+                
+                // Características
+                const characteristics = {
+                    shape: document.getElementById('edit_shape').value || '',
+                    size: document.getElementById('edit_size').value || '',
+                    speed: document.getElementById('edit_speed').value || '',
+                    luminosity: document.getElementById('edit_luminosity').value || '',
+                    colors: document.getElementById('edit_colors').value || '',
+                    behavior: document.getElementById('edit_behavior').value || ''
+                };
+                formData.append('characteristics', JSON.stringify(characteristics));
+                
+                // Nuevas imágenes
+                const newImages = document.getElementById('edit_newImages').files;
+                for (let i = 0; i < Math.min(newImages.length, 5); i++) {
+                    formData.append('newImages', newImages[i]);
+                }
+                
+                const response = await fetch(`${API_URL}/api/library/edit/${objectId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    msgDiv.textContent = '✅ Objeto actualizado correctamente';
+                    msgDiv.className = 'small-msg text-success';
+                    
+                    setTimeout(() => {
+                        bootstrap.Modal.getInstance(document.getElementById('editObjectModal')).hide();
+                        loadObjects(); // Recargar la biblioteca
+                    }, 1500);
+                } else {
+                    msgDiv.textContent = '❌ ' + (data.message || 'Error actualizando objeto');
+                    msgDiv.className = 'small-msg text-danger';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                msgDiv.textContent = '❌ Error actualizando objeto';
+                msgDiv.className = 'small-msg text-danger';
+            }
+        });
+    </script>
+</body>
+</html>

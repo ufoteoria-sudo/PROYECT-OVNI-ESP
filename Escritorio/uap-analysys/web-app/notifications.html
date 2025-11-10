@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notificaciones - UAP Analysis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .notifications-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .notification-item {
+            border-left: 4px solid #667eea;
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .notification-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .notification-item.unread {
+            background: #e3f2fd;
+            border-left-color: #2196f3;
+        }
+        
+        .notification-item.high {
+            border-left-color: #dc2626;
+        }
+        
+        .notification-badge {
+            display: inline-block;
+            background: #dc2626;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        
+        .notification-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        
+        .icon-analysis { background: #e3f2fd; color: #2196f3; }
+        .icon-report { background: #fef3c7; color: #f59e0b; }
+        .icon-system { background: #fee2e2; color: #dc2626; }
+        .icon-admin { background: #f3e8ff; color: #9333ea; }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <div class="notifications-container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2><i class="bi bi-bell"></i> Notificaciones</h2>
+                <p class="text-muted mb-0">
+                    <span id="unreadCount">0</span> no leídas
+                </p>
+            </div>
+            <div>
+                <button class="btn btn-primary btn-sm me-2" onclick="markAllAsRead()">
+                    <i class="bi bi-check-all"></i> Marcar todas como leídas
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="clearReadNotifications()">
+                    <i class="bi bi-trash"></i> Limpiar leídas
+                </button>
+                <button class="btn btn-outline-primary btn-sm" onclick="goToDashboard()">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </button>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="btn-group mb-4" role="group">
+            <button class="btn btn-outline-secondary btn-sm active" onclick="filterNotifications('all')">
+                Todas
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="filterNotifications('unread')">
+                No leídas
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="filterNotifications('analysis_completed')">
+                <i class="bi bi-check-circle"></i> Análisis
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="filterNotifications('report_generated')">
+                <i class="bi bi-file-earmark-text"></i> Reportes
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="filterNotifications('system_alert')">
+                <i class="bi bi-exclamation-triangle"></i> Sistema
+            </button>
+        </div>
+
+        <!-- Lista de notificaciones -->
+        <div id="notificationsList">
+            <!-- Se cargará dinámicamente -->
+        </div>
+
+        <!-- Estado vacío -->
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <i class="bi bi-bell-slash"></i>
+            <h4>No hay notificaciones</h4>
+            <p>Cuando tengas nuevas notificaciones aparecerán aquí</p>
+        </div>
+
+        <!-- Paginación -->
+        <nav id="notificationsPagination" class="mt-4"></nav>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000';
+        let currentFilter = 'all';
+        let currentPage = 1;
+
+        // Verificar autenticación
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return false;
+            }
+            return true;
+        }
+
+        // Cargar notificaciones
+        async function loadNotifications(page = 1) {
+            if (!checkAuth()) return;
+
+            const token = localStorage.getItem('token');
+            try {
+                let url = `${API_URL}/api/notifications?page=${page}&limit=20`;
+                
+                if (currentFilter === 'unread') {
+                    url += '&isRead=false';
+                } else if (currentFilter !== 'all') {
+                    url += `&type=${currentFilter}`;
+                }
+
+                const response = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const { notifications, pagination } = await response.json();
+                    displayNotifications(notifications);
+                    displayPagination(pagination);
+                    updateUnreadCount();
+                } else {
+                    console.error('Error cargando notificaciones');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Mostrar notificaciones
+        function displayNotifications(notifications) {
+            const container = document.getElementById('notificationsList');
+            const emptyState = document.getElementById('emptyState');
+
+            if (notifications.length === 0) {
+                container.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            
+            const html = notifications.map(notif => {
+                const iconClass = getIconClass(notif.type);
+                const timeAgo = getTimeAgo(new Date(notif.createdAt));
+                const unreadClass = notif.isRead ? '' : 'unread';
+                const priorityClass = notif.priority === 'high' ? 'high' : '';
+
+                return `
+                    <div class="notification-item ${unreadClass} ${priorityClass}" onclick="markAsRead('${notif._id}')">
+                        <div class="d-flex">
+                            <div class="notification-icon ${iconClass} me-3">
+                                ${getIcon(notif.type)}
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between">
+                                    <strong>${notif.title}</strong>
+                                    <small class="text-muted">${timeAgo}</small>
+                                </div>
+                                <p class="mb-1">${notif.message}</p>
+                                ${notif.priority === 'high' ? '<span class="badge bg-danger">Alta prioridad</span>' : ''}
+                                ${!notif.isRead ? '<span class="badge bg-primary">Nueva</span>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+        }
+
+        // Obtener clase de ícono según tipo
+        function getIconClass(type) {
+            const classes = {
+                'analysis_completed': 'icon-analysis',
+                'report_generated': 'icon-report',
+                'system_alert': 'icon-system',
+                'admin_message': 'icon-admin',
+                'subscription_update': 'icon-report'
+            };
+            return classes[type] || 'icon-system';
+        }
+
+        // Obtener ícono según tipo
+        function getIcon(type) {
+            const icons = {
+                'analysis_completed': '<i class="bi bi-check-circle-fill"></i>',
+                'report_generated': '<i class="bi bi-file-earmark-text-fill"></i>',
+                'system_alert': '<i class="bi bi-exclamation-triangle-fill"></i>',
+                'admin_message': '<i class="bi bi-person-badge-fill"></i>',
+                'subscription_update': '<i class="bi bi-star-fill"></i>'
+            };
+            return icons[type] || '<i class="bi bi-bell-fill"></i>';
+        }
+
+        // Calcular tiempo transcurrido
+        function getTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            
+            if (seconds < 60) return 'Ahora';
+            if (seconds < 3600) return `Hace ${Math.floor(seconds / 60)} min`;
+            if (seconds < 86400) return `Hace ${Math.floor(seconds / 3600)} h`;
+            if (seconds < 604800) return `Hace ${Math.floor(seconds / 86400)} días`;
+            
+            return date.toLocaleDateString('es-ES');
+        }
+
+        // Marcar como leída
+        async function markAsRead(notificationId) {
+            const token = localStorage.getItem('token');
+            try {
+                await fetch(`${API_URL}/api/notifications/${notificationId}/read`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                loadNotifications(currentPage);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Marcar todas como leídas
+        async function markAllAsRead() {
+            const token = localStorage.getItem('token');
+            try {
+                await fetch(`${API_URL}/api/notifications/read-all`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                loadNotifications(currentPage);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Limpiar notificaciones leídas
+        async function clearReadNotifications() {
+            if (!confirm('¿Eliminar todas las notificaciones leídas?')) return;
+
+            const token = localStorage.getItem('token');
+            try {
+                await fetch(`${API_URL}/api/notifications/read/clear`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                loadNotifications(currentPage);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Actualizar conteo de no leídas
+        async function updateUnreadCount() {
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`${API_URL}/api/notifications/unread-count`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const { count } = await response.json();
+                    document.getElementById('unreadCount').textContent = count;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Filtrar notificaciones
+        function filterNotifications(filter) {
+            currentFilter = filter;
+            currentPage = 1;
+            
+            // Actualizar botones activos
+            document.querySelectorAll('.btn-group button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            loadNotifications(1);
+        }
+
+        // Mostrar paginación
+        function displayPagination(pagination) {
+            const container = document.getElementById('notificationsPagination');
+            const { page, totalPages } = pagination;
+
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = '<ul class="pagination justify-content-center">';
+            
+            for (let i = 1; i <= Math.min(totalPages, 10); i++) {
+                html += `
+                    <li class="page-item ${i === page ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="loadNotifications(${i}); return false;">${i}</a>
+                    </li>
+                `;
+            }
+            
+            html += '</ul>';
+            container.innerHTML = html;
+        }
+
+        // Volver al dashboard
+        function goToDashboard() {
+            window.location.href = 'dashboard.html';
+        }
+
+        // Inicializar
+        if (checkAuth()) {
+            loadNotifications();
+            // Actualizar cada 30 segundos
+            setInterval(updateUnreadCount, 30000);
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
