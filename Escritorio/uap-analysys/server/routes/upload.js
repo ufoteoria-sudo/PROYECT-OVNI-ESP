@@ -61,6 +61,10 @@ router.post('/', auth, upload.single('file'), async (req, res) => {
         uploadDate: analysis.uploadDate,
         status: analysis.status,
         hasContext: !!sightingContext
+      },
+      image: {
+        filename: file.filename, // Nombre del archivo en el servidor
+        path: file.path
       }
     });
 

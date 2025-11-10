@@ -43,6 +43,22 @@ async function processPending() {
     pending.aiAnalysis = result.data;
     pending.status = 'completed';
     
+    // Guardar match con training si existe
+    if (result.data.matchedWithTraining) {
+      pending.matchedWithTraining = true;
+      pending.trainingImageId = result.data.trainingImageId;
+      pending.trainingMatchScore = result.data.trainingMatchScore;
+      console.log('📚 Match con training guardado:', result.data.trainingMatchScore + '%');
+      
+      // Actualizar estadísticas de uso de la imagen de training
+      const TrainingImage = require('./models/TrainingImage');
+      const trainingImage = await TrainingImage.findById(result.data.trainingImageId);
+      if (trainingImage) {
+        await trainingImage.incrementUsage();
+        console.log('📈 Estadísticas de training actualizadas');
+      }
+    }
+    
     if (result.data.rawResponse?.bestMatch) {
       const bestMatch = result.data.rawResponse.bestMatch;
       pending.bestMatch = {

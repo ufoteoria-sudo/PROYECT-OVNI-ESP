@@ -62,6 +62,7 @@ router.post('/', auth, isAdmin, upload.single('image'), async (req, res) => {
       technicalData,
       commonSightings,
       tags,
+      keywords, // NUEVO: Keywords para matching textual
       notes,
       externalRefs
     } = req.body;
@@ -109,6 +110,19 @@ router.post('/', auth, isAdmin, upload.single('image'), async (req, res) => {
       ? JSON.parse(tags)
       : (Array.isArray(tags) ? tags : []);
 
+    // NUEVO: Parsear keywords
+    const parsedKeywords = typeof keywords === 'string'
+      ? JSON.parse(keywords)
+      : (Array.isArray(keywords) ? keywords : []);
+    
+    // Validar máximo 20 keywords
+    if (parsedKeywords.length > 20) {
+      await fs.unlink(req.file.path);
+      return res.status(400).json({
+        error: 'Máximo 20 palabras clave permitidas'
+      });
+    }
+
     const parsedExternalRefs = typeof externalRefs === 'string'
       ? JSON.parse(externalRefs)
       : externalRefs;
@@ -146,6 +160,7 @@ router.post('/', auth, isAdmin, upload.single('image'), async (req, res) => {
       technicalData: parsedTechnicalData,
       commonSightings: parsedCommonSightings,
       tags: parsedTags,
+      keywords: parsedKeywords, // NUEVO: Keywords para matching
       notes,
       externalRefs: parsedExternalRefs,
       uploadedBy: req.user._id,
@@ -380,6 +395,178 @@ router.delete('/:id', auth, isAdmin, async (req, res) => {
   }
 });
 
+// ==================== CREAR DESDE ANÁLISIS ====================
+// POST /api/training/from-analysis/:analysisId - Convertir análisis en imagen de entrenamiento (ADMIN)
+router.post('/from-analysis/:analysisId', auth, isAdmin, async (req, res) => {
+  try {
+    const Analysis = require('../models/Analysis');
+    const analysisId = req.params.analysisId;
+    const { verifiedCategory, verifiedType, model, additionalNotes } = req.body;
+
+    // Obtener el análisis
+    const analysis = await Analysis.findById(analysisId);
+    
+    if (!analysis) {
+      return res.status(404).json({ error: 'Análisis no encontrado' });
+    }
+
+    if (!analysis.filePath || analysis.fileType !== 'image') {
+      return res.status(400).json({ error: 'Solo se pueden convertir análisis de imágenes' });
+    }
+
+    // Verificar que el análisis esté completado
+    if (analysis.status !== 'completed') {
+      return res.status(400).json({ error: 'Solo se pueden convertir análisis completados' });
+    }
+
+    // Determinar la categoría (usar la verificada por admin o la del análisis)
+    const category = verifiedCategory || analysis.aiAnalysis?.category || 'unknown';
+    const type = verifiedType || analysis.aiAnalysis?.objectDetails?.type || category;
+
+    // Construir características visuales desde el análisis visual
+    const visualFeatures = {};
+    if (analysis.visualAnalysis) {
+      visualFeatures.shape = analysis.visualAnalysis.shapeAnalysis?.shapeType;
+      visualFeatures.lightPattern = analysis.visualAnalysis.lightPatterns?.pattern;
+      
+      if (analysis.visualAnalysis.colorProfile?.dominant) {
+        visualFeatures.colors = [analysis.visualAnalysis.colorProfile.colorType];
+      }
+    }
+
+    // Construir datos técnicos desde EXIF y análisis forense
+    const technicalData = {};
+    if (analysis.exifData) {
+      if (analysis.exifData.gps) {
+        technicalData.captureLocation = `${analysis.exifData.gps.latitude}, ${analysis.exifData.gps.longitude}`;
+      }
+      if (analysis.exifData.camera) {
+        technicalData.capturedWith = `${analysis.exifData.camera.make} ${analysis.exifData.camera.model}`;
+      }
+    }
+
+    // Datos de análisis forense
+    const forensicData = {};
+    if (analysis.forensicAnalysis) {
+      forensicData.authenticityScore = 100 - (analysis.forensicAnalysis.manipulationScore || 0);
+      forensicData.verdict = analysis.forensicAnalysis.verdict;
+      forensicData.lightingConsistency = analysis.forensicAnalysis.lightingAnalysis?.inconsistencyScore;
+      forensicData.noiseConsistency = analysis.forensicAnalysis.noiseAnalysis?.inconsistencyScore;
+      forensicData.cloneDetection = analysis.forensicAnalysis.cloneDetection?.cloneScore;
+      forensicData.edgeConsistency = analysis.forensicAnalysis.edgeConsistency?.inconsistencyScore;
+    }
+
+    // Construir descripción automática
+    let description = `Imagen verificada del análisis #${analysisId}.\n`;
+    description += `Clasificación IA: ${analysis.aiAnalysis?.category || 'N/A'} (${analysis.aiAnalysis?.confidence || 0}% confianza).\n`;
+    
+    if (analysis.visualAnalysis) {
+      description += `Análisis visual: ${analysis.visualAnalysis.objectType?.category} (${analysis.visualAnalysis.objectType?.confidence || 0}% confianza).\n`;
+    }
+    
+    if (analysis.forensicAnalysis) {
+      description += `Análisis forense: ${forensicData.authenticityScore}% auténtica, veredicto: ${forensicData.verdict}.\n`;
+    }
+
+    if (additionalNotes) {
+      description += `\nNotas del administrador: ${additionalNotes}`;
+    }
+
+    // Copiar imagen a carpeta de training
+    const fs = require('fs').promises;
+    const originalPath = analysis.filePath;
+    const trainingDir = path.join(__dirname, '../uploads/training');
+    await fs.mkdir(trainingDir, { recursive: true });
+
+    const timestamp = Date.now();
+    const ext = path.extname(originalPath);
+    const newFilename = `training-${timestamp}-from-analysis${ext}`;
+    const newPath = path.join(trainingDir, newFilename);
+    
+    // Copiar archivo
+    await fs.copyFile(originalPath, newPath);
+
+    // Generar thumbnail
+    const thumbnailFilename = `thumb-${newFilename}`;
+    const thumbnailPath = path.join(trainingDir, thumbnailFilename);
+    
+    try {
+      await sharp(newPath)
+        .resize(300, 300, {
+          fit: 'cover',
+          position: 'center'
+        })
+        .jpeg({ quality: 80 })
+        .toFile(thumbnailPath);
+    } catch (error) {
+      console.error('Error generando thumbnail:', error);
+    }
+
+    // Crear tags automáticos
+    const tags = [category, type];
+    if (analysis.aiAnalysis?.category) tags.push(analysis.aiAnalysis.category);
+    if (analysis.visualAnalysis?.objectType?.category) tags.push(analysis.visualAnalysis.objectType.category);
+    if (analysis.exifData?.camera?.make) tags.push(analysis.exifData.camera.make.toLowerCase());
+    
+    // Eliminar duplicados
+    const uniqueTags = [...new Set(tags)].filter(t => t && t !== 'unknown');
+
+    // Crear imagen de entrenamiento
+    const trainingImage = new TrainingImage({
+      category: category,
+      type: type,
+      model: model || analysis.aiAnalysis?.objectDetails?.model,
+      description: description,
+      imageUrl: newFilename,
+      thumbnailUrl: thumbnailFilename,
+      visualFeatures: visualFeatures,
+      technicalData: technicalData,
+      tags: uniqueTags,
+      uploadedBy: req.userId,
+      source: 'user_contribution',
+      verified: true, // Automáticamente verificada por admin
+      verifiedBy: req.userId,
+      verifiedAt: new Date(),
+      notes: `Generado automáticamente desde análisis ${analysisId}.\nDatos forenses: ${JSON.stringify(forensicData, null, 2)}`,
+      externalRefs: [
+        {
+          name: 'Análisis Original',
+          url: `/analysis/${analysisId}`,
+          type: 'internal'
+        }
+      ]
+    });
+
+    await trainingImage.save();
+
+    // Actualizar el análisis para indicar que fue usado como training
+    analysis.usedForTraining = true;
+    analysis.trainingImageId = trainingImage._id;
+    await analysis.save();
+
+    res.status(201).json({
+      message: 'Imagen de entrenamiento creada exitosamente desde análisis',
+      trainingImage: {
+        id: trainingImage._id,
+        category: trainingImage.category,
+        type: trainingImage.type,
+        imageUrl: trainingImage.imageUrl,
+        thumbnailUrl: trainingImage.thumbnailUrl,
+        tags: trainingImage.tags,
+        forensicData: forensicData
+      },
+      analysisId: analysisId
+    });
+
+  } catch (error) {
+    console.error('Error creando imagen de entrenamiento desde análisis:', error);
+    res.status(500).json({
+      error: 'Error creando imagen de entrenamiento',
+      details: error.message
+    });
+  }
+});
+
 // ==================== ESTADÍSTICAS ====================
 // GET /api/training/stats/categories - Obtener estadísticas por categoría
 router.get('/stats/categories', auth, async (req, res) => {
@@ -421,6 +608,137 @@ router.post('/search/similar', auth, async (req, res) => {
     console.error('Error buscando imágenes similares:', error);
     res.status(500).json({
       error: 'Error buscando imágenes similares',
+      details: error.message
+    });
+  }
+});
+
+// ============================================
+// PROMOVER A BIBLIOTECA VISUAL
+// ============================================
+
+// POST /api/training/:id/promote-to-library - Promover imagen de entrenamiento a biblioteca visual (ADMIN)
+router.post('/:id/promote-to-library', auth, isAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const UFODatabase = require('../models/UFODatabase');
+
+    // Buscar imagen de entrenamiento
+    const trainingImage = await TrainingImage.findById(id);
+    
+    if (!trainingImage) {
+      return res.status(404).json({ error: 'Imagen de entrenamiento no encontrada' });
+    }
+
+    // Verificar si ya fue promovida
+    if (trainingImage.promotedToLibrary) {
+      return res.status(400).json({ 
+        error: 'Esta imagen ya fue promovida a la biblioteca visual',
+        libraryId: trainingImage.libraryEntryId
+      });
+    }
+
+    // Mapear categoría de TrainingImage a UFODatabase
+    const categoryMap = {
+      'aircraft_commercial': 'aircraft',
+      'aircraft_military': 'aircraft',
+      'aircraft_private': 'aircraft',
+      'helicopter': 'aircraft',
+      'drone': 'drone',
+      'balloon': 'balloon',
+      'rocket': 'satellite',
+      'satellite': 'satellite',
+      'debris': 'satellite',
+      'celestial': 'celestial',
+      'natural': 'natural',
+      'weather': 'natural',
+      'atmospheric': 'natural',
+      'bird': 'bird',
+      'lens_flare': 'hoax',
+      'reflection_glass': 'hoax',
+      'reflection_vehicle': 'hoax',
+      'artificial_light': 'hoax',
+      'light_trail': 'hoax',
+      'camera_artifact': 'hoax',
+      'kite': 'unknown',
+      'insect': 'bird',
+      'unknown': 'unknown',
+      'other': 'unknown'
+    };
+
+    const libraryCategory = categoryMap[trainingImage.category] || 'unknown';
+
+    // Crear nombre descriptivo
+    const name = trainingImage.model 
+      ? `${trainingImage.type} (${trainingImage.model})`
+      : trainingImage.type;
+
+    // Mapear características
+    const characteristics = {
+      shape: trainingImage.visualFeatures?.shape || 'other',
+      color: trainingImage.visualFeatures?.colors || [],
+      size: trainingImage.visualFeatures?.size || 'desconocido',
+      behavior: trainingImage.visualFeatures?.movementPattern || 'desconocido',
+      speed: trainingImage.visualFeatures?.commonSpeed || 'desconocido',
+      luminosity: trainingImage.visualFeatures?.lightPattern || 'desconocido'
+    };
+
+    // Crear patrones visuales para matching
+    const visualPatterns = [
+      trainingImage.category,
+      trainingImage.type,
+      ...(trainingImage.tags || []),
+      ...(trainingImage.visualFeatures?.colors || [])
+    ].filter(Boolean);
+
+    // Crear entrada en UFODatabase
+    const libraryEntry = new UFODatabase({
+      name,
+      category: libraryCategory,
+      description: trainingImage.description || `${name} - Entrada promovida desde datos de entrenamiento`,
+      characteristics,
+      visualPatterns,
+      images: [{
+        url: trainingImage.imageUrl,
+        description: trainingImage.description || name,
+        isReference: true
+      }],
+      scientificName: trainingImage.technicalData?.manufacturer 
+        ? `${trainingImage.technicalData.manufacturer} ${trainingImage.technicalData.model || trainingImage.type}`
+        : undefined,
+      altitude: trainingImage.visualFeatures?.commonAltitude,
+      typicalLocations: trainingImage.commonSightings?.locations || [],
+      timeOfDay: trainingImage.commonSightings?.timeOfDay || [],
+      isVerified: trainingImage.verified || false,
+      verificationSource: trainingImage.source || 'Training Data',
+      externalLinks: trainingImage.externalRefs || []
+    });
+
+    await libraryEntry.save();
+
+    // Actualizar TrainingImage con referencia
+    trainingImage.promotedToLibrary = true;
+    trainingImage.libraryEntryId = libraryEntry._id;
+    await trainingImage.save();
+
+    console.log(`✅ Imagen de entrenamiento ${id} promovida a biblioteca visual: ${libraryEntry._id}`);
+
+    res.json({
+      success: true,
+      message: 'Imagen promovida exitosamente a la biblioteca visual',
+      trainingImageId: trainingImage._id,
+      libraryEntry: {
+        id: libraryEntry._id,
+        name: libraryEntry.name,
+        category: libraryEntry.category,
+        description: libraryEntry.description
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error promoviendo a biblioteca:', error);
+    res.status(500).json({
+      error: 'Error al promover imagen a biblioteca visual',
       details: error.message
     });
   }

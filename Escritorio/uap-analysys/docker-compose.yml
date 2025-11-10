@@ -14,8 +14,42 @@ services:
     networks:
       - uap-network
 
+  wordpress:
+    image: wordpress:latest
+    container_name: uap-wordpress
+    restart: always
+    ports:
+      - "8090:80"
+    environment:
+      WORDPRESS_DB_HOST: mysql:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress_password
+      WORDPRESS_DB_NAME: wordpress_db
+    volumes:
+      - ./wordpress:/var/www/html
+    depends_on:
+      - mysql
+    networks:
+      - uap-network
+
+  mysql:
+    image: mysql:8.0
+    container_name: uap-mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: wordpress_db
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress_password
+      MYSQL_ROOT_PASSWORD: root_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - uap-network
+
 volumes:
   mongodb_data:
+    driver: local
+  mysql_data:
     driver: local
 
 networks:

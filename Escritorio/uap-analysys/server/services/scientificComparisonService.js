@@ -1,9 +1,18 @@
 const UFODatabase = require('../models/UFODatabase');
 const featureExtractionService = require('./featureExtractionService');
+const TrainingMatchService = require('./trainingMatchService');
+const objectDetectionService = require('./objectDetectionService');
+const aiService = require('./aiService');
 
 /**
- * SERVICIO DE COMPARACIÓN CIENTÍFICA DE IMÁGENES
- * Proceso basado en extracción de características y similitud matemática
+ * SERVICIO DE COMPARACIÓN CIENTÍFICA DE IMÁGENES - VERSIÓN HÍBRIDA
+ * 
+ * ARQUITECTURA DE 3 CAPAS:
+ * 1. DETECCIÓN DE OBJETOS (OpenCV-like con Sharp+Jimp) - Análisis objetivo
+ * 2. COMPARACIÓN CIENTÍFICA (Features + Training Dataset) - Base de conocimiento
+ * 3. ANÁLISIS SEMÁNTICO (Llama Vision) - Contexto y descripción
+ * 
+ * Los 3 análisis trabajan juntos para producir un resultado final más preciso
  */
 
 /**
@@ -14,8 +23,77 @@ const featureExtractionService = require('./featureExtractionService');
  */
 async function analyzeImageScientifically(filePath, exifData = {}) {
   try {
-    console.log('🔬 ANÁLISIS CIENTÍFICO DE IMAGEN');
-    console.log('='.repeat(60));
+    console.log('🔬 ANÁLISIS CIENTÍFICO HÍBRIDO (OpenCV + Training + Llama)');
+    console.log('='.repeat(70));
+    
+    // **CAPA 1: DETECCIÓN DE OBJETOS (Análisis objetivo OpenCV-like)**
+    console.log('\n🎯 CAPA 1: Detección de objetos con análisis de imagen...');
+    const objectDetection = await objectDetectionService.analyzeImage(filePath);
+    
+    if (!objectDetection.success) {
+      console.log('⚠️  Detección de objetos falló, continuando con otros análisis...');
+    } else {
+      console.log('✅ Detección completada:');
+      console.log(`   - Clasificación: ${objectDetection.data.classification.category}`);
+      console.log(`   - Confianza: ${objectDetection.data.confidenceScore}%`);
+      console.log(`   - Anomalías detectadas: ${objectDetection.data.anomalies.length}`);
+      console.log(`   - Colores dominantes: ${objectDetection.data.dominantColors.length}`);
+      console.log(`   - Nitidez: ${objectDetection.data.sharpness.quality}`);
+    }
+    
+    // **CAPA 2: TRAINING DATASET (Aprendizaje supervisado)**
+    console.log('\n🎓 CAPA 2: Consultando dataset de training...');
+    const trainingMatch = await TrainingMatchService.findMatches(filePath, exifData, {
+      tags: [],
+      description: '',
+      suggestedCategories: []
+    });
+    
+    // Si hay match de training con alta confianza (≥75%), usar directamente
+    if (trainingMatch.matchFound && trainingMatch.bestMatch && trainingMatch.bestMatch.matchScore >= 75) {
+      console.log(`✅ MATCH DE TRAINING ENCONTRADO: ${trainingMatch.bestMatch.type} (${trainingMatch.bestMatch.matchScore}%)`);
+      console.log(`   Categoría: ${trainingMatch.bestMatch.category}`);
+      console.log('   ⚡ Usando clasificación de training directamente (alta confianza)');
+      
+      // Combinar con detección de objetos para enriquecer resultado
+      const enrichedResult = {
+        category: trainingMatch.bestMatch.category,
+        confidence: trainingMatch.bestMatch.matchScore,
+        description: `Match directo con training: ${trainingMatch.bestMatch.type}. ${trainingMatch.bestMatch.description || ''}`,
+        provider: 'training_dataset',
+        model: 'supervised_learning',
+        source: 'training_match',
+        // Datos de detección de objetos
+        objectDetection: objectDetection.success ? objectDetection.data : null,
+        // TRACKING: Datos para guardar en Analysis
+        matchedWithTraining: true,
+        trainingImageId: trainingMatch.bestMatch.trainingImageId,
+        trainingMatchScore: trainingMatch.bestMatch.matchScore,
+        rawResponse: {
+          trainingMatch: trainingMatch.bestMatch,
+          allTrainingMatches: trainingMatch.allMatches,
+          objectDetection: objectDetection.success ? objectDetection.data : null,
+          usedTrainingData: true
+        }
+      };
+      
+      return {
+        success: true,
+        data: enrichedResult
+      };
+    }
+    
+    // Si hay match de training con confianza media (60-74%), usar como bonus
+    let trainingBonus = 0;
+    let trainingContext = null;
+    if (trainingMatch.bestMatch && trainingMatch.bestMatch.matchScore >= 60) {
+      trainingBonus = Math.round((trainingMatch.bestMatch.matchScore - 60) / 2); // 0-7% bonus
+      trainingContext = trainingMatch.bestMatch;
+      console.log(`📊 Match de training encontrado: ${trainingMatch.bestMatch.type} (${trainingMatch.bestMatch.matchScore}%)`);
+      console.log(`   Aplicando bonus de ${trainingBonus}% al análisis científico`);
+    } else {
+      console.log('ℹ️  No hay matches de training con suficiente confianza');
+    }
     
     // PASO 1: Extracción de características de la imagen input
     console.log('\n📊 PASO 1: Extrayendo características científicas...');
@@ -46,7 +124,12 @@ async function analyzeImageScientifically(filePath, exifData = {}) {
     
     for (const obj of dbObjects) {
       // Si el objeto no tiene features precalculadas, usar valores por defecto
-      const objFeatures = obj.scientificFeatures || generateDefaultFeatures(obj);
+      let objFeatures = obj.scientificFeatures;
+      
+      // Validar que scientificFeatures existe y tiene la estructura correcta
+      if (!objFeatures || !objFeatures.morphology || !objFeatures.colorHistogram) {
+        objFeatures = generateDefaultFeatures(obj);
+      }
       
       // Calcular similitud matemática
       const similarity = featureExtractionService.calculateFeatureSimilarity(
@@ -85,20 +168,121 @@ async function analyzeImageScientifically(filePath, exifData = {}) {
       exifBonus += 5; // Bonus por metadatos completos
     }
     
-    const finalConfidence = Math.min(Math.max(confidence + exifBonus, 0), 99);
+    // **BONUS POR TRAINING MATCH** (si hay coincidencia parcial)
+    const totalBonus = exifBonus + trainingBonus;
+    let finalConfidence = Math.min(Math.max(confidence + totalBonus, 0), 99);
     
     // PASO 6: Generar descripción científica
-    const description = generateScientificDescription(inputFeatures, bestMatch, finalConfidence);
+    let description = generateScientificDescription(inputFeatures, bestMatch, finalConfidence);
     
-    console.log('\n' + '='.repeat(60));
-    console.log(`🎯 RESULTADO: ${bestMatch.objectName} (${finalConfidence}%)`);
-    console.log('='.repeat(60));
+    // Agregar contexto de training si existe
+    if (trainingContext) {
+      description += ` [Training match: ${trainingContext.type} (${trainingContext.matchScore}%) confirmado parcialmente]`;
+    }
+    
+    // **CAPA 3: ANÁLISIS SEMÁNTICO CON LLAMA VISION (Complementario)**
+    console.log('\n🤖 CAPA 3: Análisis semántico con Llama Vision...');
+    let llamaAnalysis = null;
+    let llamaBonus = 0;
+    
+    // Solo usar Llama si la confianza es baja o media (<75%)
+    if (finalConfidence < 75 && aiService.isConfigured()) {
+      console.log('   Confianza < 75%, solicitando análisis adicional de Llama...');
+      const llamaResult = await aiService.analyzeImage(filePath);
+      
+      if (llamaResult.success) {
+        llamaAnalysis = llamaResult.data;
+        console.log(`✅ Llama Vision completado:`);
+        console.log(`   - Categoría: ${llamaAnalysis.category}`);
+        console.log(`   - Confianza: ${llamaAnalysis.confidence}%`);
+        console.log(`   - Descripción: ${llamaAnalysis.description.substring(0, 100)}...`);
+        
+        // Si Llama tiene alta confianza y coincide con análisis científico, dar bonus
+        if (llamaAnalysis.confidence >= 70 && llamaAnalysis.category === category) {
+          llamaBonus = Math.round((llamaAnalysis.confidence - 70) / 5); // 0-6% bonus
+          console.log(`   📈 Bonus por coincidencia Llama: +${llamaBonus}%`);
+        } else if (llamaAnalysis.category !== category) {
+          console.log(`   ⚠️  Discrepancia: Llama detectó "${llamaAnalysis.category}" vs científico "${category}"`);
+          // No aplicar bonus si hay discrepancia
+        }
+        
+        // Enriquecer descripción con análisis de Llama
+        if (llamaAnalysis.description && llamaAnalysis.description.length > 50) {
+          description += `\n\nAnálisis contextual (IA): ${llamaAnalysis.description}`;
+        }
+        
+        // Recalcular confianza final con bonus de Llama
+        finalConfidence = Math.min(Math.max(finalConfidence + llamaBonus, 0), 99);
+      } else {
+        console.log('⚠️  Llama Vision no disponible o falló, continuando sin análisis semántico');
+      }
+    } else if (finalConfidence >= 75) {
+      console.log('   ✓ Confianza alta (≥75%), Llama Vision no necesario');
+    } else {
+      console.log('   ⚠️  Llama Vision no configurado (HF_TOKEN), saltando análisis semántico');
+    }
+    
+    // **SCORING FINAL HÍBRIDO**
+    // Ponderar las 3 capas:
+    // - 40% Detección de objetos (características objetivas)
+    // - 40% Análisis científico + Training (base de conocimiento)
+    // - 20% Llama Vision (contexto semántico)
+    let hybridScore = finalConfidence;
+    
+    if (objectDetection.success) {
+      const objectScore = objectDetection.data.confidenceScore;
+      const objectCategory = objectDetection.data.classification.category;
+      
+      // Si las categorías coinciden, aplicar scoring híbrido
+      const categoriesMatch = 
+        objectCategory === category ||
+        (objectCategory === 'defined_object' && category !== 'natural') ||
+        (objectCategory === 'celestial' && category === 'celestial');
+      
+      if (categoriesMatch) {
+        // Scoring híbrido: 40% objeto + 40% científico + 20% llama
+        const scientificWeight = 0.40;
+        const objectWeight = 0.40;
+        const llamaWeight = 0.20;
+        
+        const llamaScore = llamaAnalysis ? llamaAnalysis.confidence : finalConfidence;
+        
+        hybridScore = Math.round(
+          (finalConfidence * scientificWeight) +
+          (objectScore * objectWeight) +
+          (llamaScore * llamaWeight)
+        );
+        
+        console.log(`\n🎯 SCORING HÍBRIDO:`);
+        console.log(`   - Científico: ${finalConfidence}% (40%)`);
+        console.log(`   - Detección objetos: ${objectScore}% (40%)`);
+        console.log(`   - Llama Vision: ${llamaScore}% (20%)`);
+        console.log(`   - FINAL: ${hybridScore}%`);
+        
+        finalConfidence = Math.min(99, Math.max(0, hybridScore));
+      }
+    }
+    
+    console.log('\n' + '='.repeat(70));
+    console.log(`🎯 RESULTADO FINAL: ${bestMatch.objectName} (${finalConfidence}%)`);
+    if (trainingBonus > 0) {
+      console.log(`   📈 Bonus de training: +${trainingBonus}%`);
+    }
+    if (llamaBonus > 0) {
+      console.log(`   📈 Bonus de Llama: +${llamaBonus}%`);
+    }
+    if (objectDetection.success) {
+      console.log(`   🔍 Detección de objetos: ${objectDetection.data.classification.category} (${objectDetection.data.confidenceScore}%)`);
+    }
+    console.log('='.repeat(70));
     
     return {
       success: true,
       data: {
-        provider: 'scientific_comparison',
-        model: 'Feature Extraction + Mathematical Similarity v5.0',
+        provider: objectDetection.success ? 'hybrid_analysis' : 'scientific_comparison',
+        model: objectDetection.success 
+          ? 'OpenCV + Feature Extraction + Llama Vision v1.0'
+          : 'Feature Extraction + Mathematical Similarity v5.0',
         description,
         category,
         confidence: finalConfidence,
@@ -121,11 +305,22 @@ async function analyzeImageScientifically(filePath, exifData = {}) {
           textureMatch: calculateTextureMatch(inputFeatures, topMatches[0]),
           edgeMatch: calculateEdgeMatch(inputFeatures, topMatches[0])
         },
+        // NUEVA: Detección de objetos
+        objectDetection: objectDetection.success ? objectDetection.data : null,
+        // NUEVA: Análisis de Llama Vision
+        llamaVisionAnalysis: llamaAnalysis,
+        // Metadata
         exifData: exifData,
         processedDate: new Date(),
         rawResponse: {
           allComparisons: comparisons,
-          totalObjectsCompared: dbObjects.length
+          totalObjectsCompared: dbObjects.length,
+          trainingMatch: trainingContext,
+          allTrainingMatches: trainingMatch.allMatches || [],
+          usedTrainingBonus: trainingBonus > 0,
+          objectDetectionResult: objectDetection,
+          llamaVisionResult: llamaAnalysis,
+          scoringMethod: objectDetection.success ? 'hybrid' : 'scientific_only'
         }
       }
     };

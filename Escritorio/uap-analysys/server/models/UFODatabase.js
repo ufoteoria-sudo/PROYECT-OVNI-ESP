@@ -9,21 +9,18 @@ const ufoDatabaseSchema = new mongoose.Schema({
   },
   
   // Categorización
+  // ACTUALIZADO: category ahora acepta cualquier slug de categoría dinámica
   category: {
     type: String,
-    required: true,
-    enum: [
-      'celestial',      // Objetos celestes (Luna, Venus, meteoros, estrellas)
-      'aircraft',       // Aeronaves convencionales (aviones, helicópteros)
-      'satellite',      // Satélites artificiales (ISS, Starlink)
-      'drone',          // Drones comerciales y recreativos
-      'balloon',        // Globos meteorológicos, aerostáticos
-      'natural',        // Fenómenos naturales (relámpagos, nubes lenticulares)
-      'bird',           // Aves y animales voladores
-      'uap',            // UAP/OVNI verificados o inexplicados
-      'hoax',           // Engaños conocidos
-      'unknown'         // Sin categorizar
-    ]
+    required: true
+    // Eliminado enum - ahora usa slugs de la colección Category
+  },
+  
+  // NUEVO: Tipología específica (subtipo)
+  typology: {
+    type: String,
+    trim: true
+    // Ej: "Boeing 737", "Luna Llena", "Drone DJI Phantom", "Esfera CGI"
   },
   
   // Descripción detallada
@@ -132,6 +129,38 @@ const ufoDatabaseSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  
+  // NUEVO: Gestión manual por administrador
+  isManualEntry: {
+    type: Boolean,
+    default: false // true si fue creado manualmente por admin
+  },
+  uploadedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  manualImages: [{
+    filename: String,
+    url: String,
+    thumbnailUrl: String,
+    description: String,
+    uploadedAt: Date
+  }],
+  editHistory: [{
+    editedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    editedAt: {
+      type: Date,
+      default: Date.now
+    },
+    changes: String // Descripción de los cambios
+  }],
+  linkedTrainingId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'TrainingImage'
   },
   
 }, { timestamps: true });

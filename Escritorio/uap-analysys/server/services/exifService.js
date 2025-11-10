@@ -147,18 +147,31 @@ async function extractExifData(filePath) {
       exifData.aperture = `f/${exifData.apertureValue}`;
     }
     
-    // Extraer GPS si está disponible
+    // Extraer GPS si está disponible (CON CONVERSIÓN A DECIMAL)
     if (tags.GPSLatitude && tags.GPSLongitude) {
+      const latDecimal = convertGPSToDecimal(tags.GPSLatitude, tags.GPSLatitudeRef || 'N');
+      const lonDecimal = convertGPSToDecimal(tags.GPSLongitude, tags.GPSLongitudeRef || 'E');
+      
+      // Convertir gpsTimeStamp de array a string si es necesario
+      let gpsTimeStamp = tags.GPSTimeStamp;
+      if (Array.isArray(gpsTimeStamp) && gpsTimeStamp.length === 3) {
+        gpsTimeStamp = `${String(gpsTimeStamp[0]).padStart(2, '0')}:${String(gpsTimeStamp[1]).padStart(2, '0')}:${String(gpsTimeStamp[2]).padStart(2, '0')}`;
+      }
+      
       exifData.location = {
-        latitude: tags.GPSLatitude,
-        longitude: tags.GPSLongitude,
+        latitude: latDecimal,
+        longitude: lonDecimal,
         altitude: tags.GPSAltitude || null,
         latitudeRef: tags.GPSLatitudeRef || null,
         longitudeRef: tags.GPSLongitudeRef || null,
         altitudeRef: tags.GPSAltitudeRef || null,
         gpsDateStamp: tags.GPSDateStamp || null,
-        gpsTimeStamp: tags.GPSTimeStamp || null,
-        address: null // Se llenará con geocoding inverso
+        gpsTimeStamp: gpsTimeStamp || null,
+        address: null, // Se llenará con geocoding inverso
+        raw: { // Guardar valores originales para debugging
+          latitudeRaw: tags.GPSLatitude,
+          longitudeRaw: tags.GPSLongitude
+        }
       };
     }
     
@@ -489,6 +502,42 @@ function getMimeType(filePath) {
 }
 
 /**
+ * Convierte coordenadas GPS a formato decimal si están en DMS
+ * @param {number|array} gpsValue - Valor GPS (puede ser decimal o array [grados, minutos, segundos])
+ * @param {string} ref - Referencia (N/S para latitud, E/W para longitud)
+ * @returns {number} Coordenada en formato decimal
+ */
+function convertGPSToDecimal(gpsValue, ref) {
+  // Si ya es un número decimal, retornar directamente
+  if (typeof gpsValue === 'number') {
+    // Aplicar signo según referencia
+    if (ref === 'S' || ref === 'W') {
+      return -Math.abs(gpsValue);
+    }
+    return Math.abs(gpsValue);
+  }
+  
+  // Si es array DMS [grados, minutos, segundos]
+  if (Array.isArray(gpsValue) && gpsValue.length === 3) {
+    const degrees = gpsValue[0];
+    const minutes = gpsValue[1];
+    const seconds = gpsValue[2];
+    
+    let decimal = degrees + (minutes / 60) + (seconds / 3600);
+    
+    // Aplicar signo según referencia
+    if (ref === 'S' || ref === 'W') {
+      decimal = -Math.abs(decimal);
+    }
+    
+    return decimal;
+  }
+  
+  // Fallback: retornar el valor tal cual
+  return gpsValue;
+}
+
+/**
  * Verifica si un archivo tiene datos EXIF
  * @param {string} filePath - Ruta completa del archivo
  * @returns {boolean}
@@ -506,5 +555,6 @@ function hasExifData(filePath) {
 
 module.exports = {
   extractExifData,
-  hasExifData
+  hasExifData,
+  convertGPSToDecimal
 };

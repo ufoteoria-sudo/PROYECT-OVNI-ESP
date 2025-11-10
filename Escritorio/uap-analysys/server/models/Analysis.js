@@ -201,6 +201,21 @@ const analysisSchema = new mongoose.Schema({
     category: String
   },
   
+  // NUEVO: Tracking de match con dataset de training
+  matchedWithTraining: {
+    type: Boolean,
+    default: false
+  },
+  trainingImageId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'TrainingImage'
+  },
+  trainingMatchScore: {
+    type: Number,
+    min: 0,
+    max: 100
+  },
+  
   // NUEVO: Contexto del avistamiento (información del testigo)
   sightingContext: {
     // Características del objeto observado
@@ -334,6 +349,165 @@ const analysisSchema = new mongoose.Schema({
     enhancedAt: Date,
     reason: String // Si no se pudo mejorar, por qué
   },
+
+  // NUEVO: Sistema de Confianza Ponderada
+  confidenceBreakdown: {
+    externalValidation: {
+      score: Number, // 0-100
+      weight: Number, // 0.40 por defecto
+      details: [String]
+    },
+    imageCharacteristics: {
+      score: Number, // 0-100
+      weight: Number, // 0.30 por defecto
+      details: [String]
+    },
+    trainingData: {
+      score: Number, // 0-100
+      weight: Number, // 0.30 por defecto
+      details: [String]
+    }
+  },
+  confidenceAdjustments: [String], // Ajustes aplicados (ej: "Reducido 20% por conflicto")
+  confidenceExplanation: String, // Explicación legible del cálculo de confianza
+
+  // NUEVO: Análisis Visual Avanzado (independiente de EXIF)
+  visualAnalysis: {
+    lightPatterns: {
+      spotCount: Number,
+      hasMultipleLights: Boolean,
+      pattern: String, // 'drone_multiple_lights', 'aircraft_navigation_lights', etc.
+      colorAnalysis: mongoose.Schema.Types.Mixed
+    },
+    shapeAnalysis: {
+      objectArea: Number,
+      compactness: Number,
+      shapeType: String, // 'circular', 'elongated', 'irregular'
+      isSmallObject: Boolean
+    },
+    colorProfile: {
+      dominant: mongoose.Schema.Types.Mixed,
+      colorType: String
+    },
+    edgeDetection: {
+      edgeDensity: Number,
+      edgeStrength: String
+    },
+    perceptualHash: String, // Para comparación visual
+    objectType: {
+      category: String, // 'drone', 'aircraft', 'celestial', etc.
+      confidence: Number,
+      allScores: mongoose.Schema.Types.Mixed
+    },
+    confidence: Number // Confianza del análisis visual (0-100)
+  },
+
+  // NUEVO: Análisis Forense (detección de manipulación)
+  forensicAnalysis: {
+    manipulationScore: Number, // 0-100 (100 = muy manipulado)
+    verdict: String, // 'LIKELY_AUTHENTIC', 'POSSIBLY_AUTHENTIC', 'INCONCLUSIVE', 'POSSIBLY_MANIPULATED', 'LIKELY_MANIPULATED'
+    
+    lightingAnalysis: {
+      inconsistencyScore: Number,
+      averageDirection: Number,
+      standardDeviation: Number,
+      regions: Number,
+      isSuspicious: Boolean
+    },
+    
+    noiseAnalysis: {
+      inconsistencyScore: Number,
+      averageNoise: Number,
+      standardDeviation: Number,
+      regions: Number,
+      isSuspicious: Boolean
+    },
+    
+    cloneDetection: {
+      cloneScore: Number,
+      clonedRegions: Number,
+      totalBlocks: Number,
+      isSuspicious: Boolean,
+      details: [mongoose.Schema.Types.Mixed] // Pares de regiones clonadas
+    },
+    
+    edgeConsistency: {
+      inconsistencyScore: Number,
+      averageDensity: Number,
+      standardDeviation: Number,
+      isSuspicious: Boolean
+    },
+    
+    processingTime: String
+  },
+
+  // NUEVO: Datos Meteorológicos
+  weatherData: {
+    source: String, // 'OpenWeatherMap'
+    queriedAt: Date,
+    location: {
+      latitude: Number,
+      longitude: Number,
+      name: String,
+      country: String
+    },
+    temperature: {
+      current: Number,
+      feels_like: Number,
+      unit: String
+    },
+    conditions: {
+      main: String, // 'clouds', 'clear', 'rain', etc.
+      description: String
+    },
+    clouds: {
+      coverage: Number, // %
+      type: String
+    },
+    visibility: Number, // metros
+    humidity: Number, // %
+    wind: {
+      speed: Number,
+      direction: Number
+    },
+    precipitation: {
+      rain_1h: Number,
+      snow_1h: Number
+    },
+    analysis: {
+      visibility_quality: String,
+      likelihood_of_optical_phenomena: String,
+      weather_explanation_probability: String,
+      relevant_conditions: [String],
+      warnings: [String]
+    }
+  },
+
+  // NUEVO: Comparación con Fenómenos Atmosféricos
+  atmosphericComparison: {
+    totalMatches: Number,
+    bestMatch: {
+      phenomenon: {
+        name: String,
+        category: String,
+        description: String,
+        rarity: String
+      },
+      score: Number,
+      confidence: String,
+      explanation: String
+    },
+    topMatches: [{
+      phenomenon: {
+        name: String,
+        category: String
+      },
+      score: Number,
+      confidence: String
+    }],
+    hasStrongMatch: Boolean,
+    summary: String
+  },
   
   // Estado del análisis
   status: {
@@ -351,6 +525,16 @@ const analysisSchema = new mongoose.Schema({
   views: {
     type: Number,
     default: 0
+  },
+  
+  // NUEVO: Indicadores de uso para training
+  usedForTraining: {
+    type: Boolean,
+    default: false
+  },
+  trainingImageId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'TrainingImage'
   },
   
 }, { 

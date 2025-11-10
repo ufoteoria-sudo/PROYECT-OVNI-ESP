@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Objeto - UAP Analysis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+</head>
+<body class="bg-light">
+    <div class="container py-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4><i class="bi bi-pencil-square"></i> Editar Objeto de Biblioteca</h4>
+            </div>
+            <div class="card-body">
+                <div id="loadingMsg" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-3">Cargando datos del objeto...</p>
+                </div>
+
+                <form id="editForm" style="display: none;">
+                    <input type="hidden" id="objectId">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nombre del Objeto *</label>
+                            <input type="text" class="form-control" id="name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Categoría *</label>
+                            <select class="form-select" id="category" required>
+                                <option value="aircraft">Aeronave</option>
+                                <option value="drone">Drone</option>
+                                <option value="satellite">Satélite</option>
+                                <option value="balloon">Globo/Dirigible</option>
+                                <option value="celestial">Objeto Celeste</option>
+                                <option value="natural">Fenómeno Natural</option>
+                                <option value="bird">Ave/Fauna</option>
+                                <option value="hoax">Fake/Hoax</option>
+                                <option value="uap">UAP/OVNI</option>
+                                <option value="unknown">Desconocido</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Tipología/Subtipo</label>
+                        <input type="text" class="form-control" id="typology">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Descripción Detallada *</label>
+                        <textarea class="form-control" id="description" rows="4" required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Palabras Clave (Keywords)</label>
+                        <input type="text" class="form-control" id="keywords" placeholder="separadas por comas (máx 20)">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Patrones Visuales</label>
+                        <input type="text" class="form-control" id="visualPatterns" placeholder="circular, luminoso, estático (separados por comas)">
+                        <small class="text-muted">Tags descriptivos para comparación visual</small>
+                    </div>
+
+                    <!-- Características -->
+                    <div class="card mb-3 bg-light">
+                        <div class="card-body">
+                            <h6 class="mb-3"><i class="bi bi-sliders"></i> Características (Opcional)</h6>
+                            <div class="row">
+                                <div class="col-md-3 mb-2">
+                                    <label class="form-label small">Forma</label>
+                                    <select class="form-select form-select-sm" id="shape">
+                                        <option value="">N/A</option>
+                                        <option value="circular">Circular</option>
+                                        <option value="oval">Oval</option>
+                                        <option value="triangular">Triangular</option>
+                                        <option value="rectangular">Rectangular</option>
+                                        <option value="irregular">Irregular</option>
+                                        <option value="cylindrical">Cilíndrico</option>
+                                        <option value="point">Punto</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <label class="form-label small">Tamaño</label>
+                                    <select class="form-select form-select-sm" id="size">
+                                        <option value="">N/A</option>
+                                        <option value="muy pequeño">Muy Pequeño</option>
+                                        <option value="pequeño">Pequeño</option>
+                                        <option value="mediano">Mediano</option>
+                                        <option value="grande">Grande</option>
+                                        <option value="muy grande">Muy Grande</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <label class="form-label small">Velocidad</label>
+                                    <select class="form-select form-select-sm" id="speed">
+                                        <option value="">N/A</option>
+                                        <option value="estático">Estático</option>
+                                        <option value="lento">Lento</option>
+                                        <option value="moderado">Moderado</option>
+                                        <option value="rápido">Rápido</option>
+                                        <option value="muy rápido">Muy Rápido</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <label class="form-label small">Luminosidad</label>
+                                    <select class="form-select form-select-sm" id="luminosity">
+                                        <option value="">N/A</option>
+                                        <option value="sin luz">Sin Luz</option>
+                                        <option value="tenue">Tenue</option>
+                                        <option value="media">Media</option>
+                                        <option value="brillante">Brillante</option>
+                                        <option value="muy brillante">Muy Brillante</option>
+                                        <option value="intermitente">Intermitente</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <label class="form-label small">Colores</label>
+                                    <input type="text" class="form-control form-control-sm" id="colors"
+                                           placeholder="blanco, rojo, azul (separados por comas)">
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <label class="form-label small">Comportamiento</label>
+                                    <input type="text" class="form-control form-control-sm" id="behavior"
+                                           placeholder="vuelo rectilíneo, estacionario, errático">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Agregar Nuevas Imágenes (máx 5)</label>
+                        <input type="file" class="form-control" id="newImages" accept="image/*" multiple>
+                    </div>
+
+                    <div id="existingImages" class="mb-3"></div>
+                    <div id="formMsg"></div>
+
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary" onclick="window.close()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_URL = 'http://localhost:3000';
+        const urlParams = new URLSearchParams(window.location.search);
+        const objectId = urlParams.get('id');
+
+        if (!objectId) {
+            alert('No se especificó ID de objeto');
+            window.close();
+        }
+
+        // Cargar datos del objeto
+        async function loadObject() {
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`${API_URL}/api/library/objects/${objectId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Error al cargar objeto');
+
+                const result = await response.json();
+                const obj = result.data;
+
+                // Llenar formulario
+                document.getElementById('objectId').value = obj._id;
+                document.getElementById('name').value = obj.name || '';
+                document.getElementById('category').value = obj.category || '';
+                document.getElementById('typology').value = obj.typology || '';
+                document.getElementById('description').value = obj.description || '';
+                document.getElementById('keywords').value = obj.keywords?.join(', ') || '';
+                document.getElementById('visualPatterns').value = obj.visualPatterns?.join(', ') || '';
+
+                // Características
+                if (obj.characteristics) {
+                    document.getElementById('shape').value = obj.characteristics.shape || '';
+                    document.getElementById('size').value = obj.characteristics.size || '';
+                    document.getElementById('speed').value = obj.characteristics.speed || '';
+                    document.getElementById('luminosity').value = obj.characteristics.luminosity || '';
+                    document.getElementById('colors').value = obj.characteristics.color?.join(', ') || obj.characteristics.colors || '';
+                    document.getElementById('behavior').value = obj.characteristics.behavior || '';
+                }
+
+                // Mostrar imágenes existentes
+                if (obj.manualImages && obj.manualImages.length > 0) {
+                    let html = `<label class="form-label">Imágenes Actuales (${obj.manualImages.length})</label><div class="row">`;
+                    obj.manualImages.forEach((img, index) => {
+                        const imageUrl = `${API_URL}${img.thumbnailUrl || img.url}`;
+                        const fullImageUrl = `${API_URL}${img.url}`;
+                        html += `
+                            <div class="col-md-3 mb-3">
+                                <div class="card">
+                                    <img src="${imageUrl}" 
+                                         class="card-img-top" 
+                                         style="height: 150px; object-fit: cover;"
+                                         alt="Imagen ${index + 1}">
+                                    <div class="card-body p-2 text-center">
+                                        <button type="button" class="btn btn-sm btn-primary w-100" 
+                                                onclick="window.open('${fullImageUrl}', '_blank')">
+                                            <i class="bi bi-eye"></i> Ver Imagen
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    document.getElementById('existingImages').innerHTML = html;
+                } else if (obj.imageUrl) {
+                    const fullImageUrl = `${API_URL}${obj.imageUrl}`;
+                    document.getElementById('existingImages').innerHTML = `
+                        <label class="form-label">Imagen Actual</label>
+                        <div class="mb-2">
+                            <img src="${fullImageUrl}" class="img-fluid rounded mb-2" style="max-width: 200px;">
+                            <div>
+                                <button type="button" class="btn btn-sm btn-primary" 
+                                        onclick="window.open('${fullImageUrl}', '_blank')">
+                                    <i class="bi bi-eye"></i> Ver Imagen Completa
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                document.getElementById('loadingMsg').style.display = 'none';
+                document.getElementById('editForm').style.display = 'block';
+
+            } catch (error) {
+                alert('Error al cargar objeto: ' + error.message);
+            }
+        }
+
+        // Submit formulario
+        document.getElementById('editForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const token = localStorage.getItem('token');
+            const submitBtn = this.querySelector('button[type="submit"]');
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Guardando...';
+
+                const formData = new FormData();
+                formData.append('name', document.getElementById('name').value);
+                formData.append('category', document.getElementById('category').value);
+                formData.append('typology', document.getElementById('typology').value);
+                formData.append('description', document.getElementById('description').value);
+
+                // Keywords
+                const keywords = document.getElementById('keywords').value;
+                if (keywords) {
+                    formData.append('keywords', JSON.stringify(keywords.split(',').map(k => k.trim()).filter(k => k)));
+                }
+
+                // Visual Patterns
+                const visualPatterns = document.getElementById('visualPatterns').value;
+                if (visualPatterns) {
+                    formData.append('visualPatterns', JSON.stringify(visualPatterns.split(',').map(p => p.trim()).filter(p => p)));
+                }
+
+                // Características
+                const characteristics = {
+                    shape: document.getElementById('shape').value || null,
+                    size: document.getElementById('size').value || null,
+                    speed: document.getElementById('speed').value || null,
+                    luminosity: document.getElementById('luminosity').value || null,
+                    color: (document.getElementById('colors').value || '').split(',').map(c => c.trim()).filter(c => c),
+                    behavior: document.getElementById('behavior').value || null
+                };
+                formData.append('characteristics', JSON.stringify(characteristics));
+
+                // Nuevas imágenes
+                const files = document.getElementById('newImages').files;
+                if (files.length > 0) {
+                    for (let i = 0; i < files.length; i++) {
+                        formData.append('newImages', files[i]);
+                    }
+                }
+
+                const response = await fetch(`${API_URL}/api/library/edit/${objectId}`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('formMsg').innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle"></i> ${data.message}
+                        </div>
+                    `;
+                    setTimeout(() => {
+                        if (window.opener) {
+                            window.opener.location.reload();
+                        }
+                        window.close();
+                    }, 2000);
+                } else {
+                    document.getElementById('formMsg').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle"></i> ${data.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('formMsg').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-x-circle"></i> Error: ${error.message}
+                    </div>
+                `;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Guardar Cambios';
+            }
+        });
+
+        loadObject();
+    </script>
+</body>
+</html>

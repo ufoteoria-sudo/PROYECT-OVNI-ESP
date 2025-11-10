@@ -8,6 +8,12 @@ const exifService = require('../services/exifService');
 const NotificationService = require('../services/notificationService');
 const externalValidationService = require('../services/externalValidationService');
 const trainingLearningService = require('../services/trainingLearningService');
+const confidenceCalculatorService = require('../services/confidenceCalculatorService');
+const visualAnalysisService = require('../services/visualAnalysisService');
+const forensicAnalysisService = require('../services/forensicAnalysisService');
+const weatherService = require('../services/weatherService');
+const atmosphericComparisonService = require('../services/atmosphericComparisonService');
+const WebSocketService = require('../services/websocketService');
 
 // POST /api/analyze/:id - Iniciar análisis de una imagen/video
 router.post('/:id', auth, async (req, res) => {
@@ -71,8 +77,7 @@ router.get('/:id/status', auth, async (req, res) => {
     const userRole = req.userRole;
     const analysisId = req.params.id;
 
-    const analysis = await Analysis.findById(analysisId)
-      .select('status aiAnalysis exifData matchResults bestMatch errorMessage fileName uploadDate createdAt fileType fileSize userId');
+    const analysis = await Analysis.findById(analysisId);
 
     if (!analysis) {
       return res.status(404).json({ error: 'Análisis no encontrado.' });
@@ -94,10 +99,24 @@ router.get('/:id/status', auth, async (req, res) => {
       hasMatches: analysis.matchResults && analysis.matchResults.length > 0,
       errorMessage: analysis.errorMessage,
       analysisData: {
-        exifData: analysis.exifData, // ⚠️ IMPORTANTE: debe ser exifData, no exif
-        aiAnalysis: analysis.aiAnalysis, // ⚠️ IMPORTANTE: debe ser aiAnalysis, no ai
-        matchResults: analysis.matchResults,
-        bestMatch: analysis.bestMatch
+        exifData: analysis.exifData,
+        aiAnalysis: analysis.aiAnalysis,
+        visualAnalysis: analysis.visualAnalysis,
+        forensicAnalysis: analysis.forensicAnalysis,
+        scientificComparison: {
+          totalMatches: analysis.matchResults ? analysis.matchResults.length : 0,
+          bestMatch: analysis.bestMatch
+        },
+        trainingEnhancement: analysis.trainingEnhancement,
+        externalValidation: analysis.externalValidation,
+        weatherData: analysis.weatherData,
+        atmosphericComparison: analysis.atmosphericComparison,
+        confidence: analysis.aiAnalysis?.confidence,
+        recommendations: analysis.aiAnalysis?.recommendations,
+        confidenceBreakdown: analysis.confidenceBreakdown,
+        confidenceAdjustments: analysis.confidenceAdjustments,
+        confidenceExplanation: analysis.confidenceExplanation,
+        matchResults: analysis.matchResults
       }
     });
 
@@ -142,22 +161,70 @@ async function performAnalysis(analysisId) {
     }
 
     console.log(`Iniciando análisis completo de: ${analysis.fileName}`);
+    
+    // Emitir evento de inicio
+    WebSocketService.emitAnalysisStarted(analysisId, analysis.userId);
+    WebSocketService.emitProgress(analysisId, 0, 'Iniciando análisis');
 
     // 1. Extraer datos EXIF (solo para imágenes)
     if (analysis.fileType === 'image') {
       console.log('Extrayendo datos EXIF...');
+      WebSocketService.emitProgress(analysisId, 10, 'Capa 1: Extrayendo metadatos EXIF');
+      
       const exifResult = await exifService.extractExifData(analysis.filePath);
       
       if (exifResult.success) {
         analysis.exifData = exifResult.data;
         console.log('Datos EXIF extraídos exitosamente');
+        WebSocketService.emitLayerComplete(analysisId, 1, 'EXIF', { 
+          hasGPS: !!exifResult.data.gpsLatitude,
+          hasTimestamp: !!exifResult.data.timestamp 
+        });
       } else {
         console.log('No se pudieron extraer datos EXIF:', exifResult.error);
       }
     }
 
+    // 1.5. ANÁLISIS VISUAL AVANZADO (independiente de EXIF)
+    console.log('🔬 Ejecutando análisis visual avanzado...');
+    WebSocketService.emitProgress(analysisId, 20, 'Capa 2: Análisis visual avanzado');
+    
+    let visualAnalysis = null;
+    try {
+      visualAnalysis = await visualAnalysisService.analyzeVisualFeatures(analysis.filePath);
+      analysis.visualAnalysis = visualAnalysis;
+      console.log(`✅ Análisis visual completado: ${visualAnalysis.objectType.category} (${visualAnalysis.objectType.confidence}% confianza visual)`);
+      
+      WebSocketService.emitLayerComplete(analysisId, 2, 'Análisis Visual', {
+        category: visualAnalysis.objectType.category,
+        confidence: visualAnalysis.objectType.confidence
+      });
+    } catch (visualError) {
+      console.error('⚠️ Error en análisis visual:', visualError.message);
+    }
+
+    // 1.6. ANÁLISIS FORENSE AVANZADO (detección de manipulación)
+    console.log('🔬 Ejecutando análisis forense de imagen...');
+    WebSocketService.emitProgress(analysisId, 30, 'Capa 3: Análisis forense');
+    
+    let forensicAnalysis = null;
+    try {
+      forensicAnalysis = await forensicAnalysisService.analyzeImage(analysis.filePath);
+      analysis.forensicAnalysis = forensicAnalysis;
+      console.log(`✅ Análisis forense completado: ${forensicAnalysis.verdict} (${forensicAnalysis.manipulationScore}/100 manipulación)`);
+      
+      WebSocketService.emitLayerComplete(analysisId, 3, 'Análisis Forense', {
+        verdict: forensicAnalysis.verdict,
+        manipulationScore: forensicAnalysis.manipulationScore
+      });
+    } catch (forensicError) {
+      console.error('⚠️ Error en análisis forense:', forensicError.message);
+    }
+
     // 2. Analizar con sistema de comparación CIENTÍFICA
     console.log('🔬 Analizando con comparación científica...');
+    WebSocketService.emitProgress(analysisId, 40, 'Capa 4: Comparación científica (1,064 objetos)');
+    
     const analysisResult = await scientificComparisonService.analyzeImageScientifically(
       analysis.filePath,
       analysis.exifData
@@ -168,6 +235,12 @@ async function performAnalysis(analysisId) {
     if (analysisResult.success) {
       preliminaryAnalysis = analysisResult.data;
       console.log(`✅ Análisis completado: ${analysisResult.data.category} (${analysisResult.data.confidence}%)`);
+      
+      WebSocketService.emitLayerComplete(analysisId, 4, 'Comparación Científica', {
+        category: analysisResult.data.category,
+        confidence: analysisResult.data.confidence,
+        matches: analysisResult.data.rawResponse?.allMatches?.length || 0
+      });
       
       // 3. Asignar mejor coincidencia
       if (analysisResult.data.rawResponse?.bestMatch) {
@@ -200,6 +273,8 @@ async function performAnalysis(analysisId) {
 
     // 2.5. MEJORAR CON DATOS DE ENTRENAMIENTO
     console.log('🎓 Mejorando análisis con datos de entrenamiento...');
+    WebSocketService.emitProgress(analysisId, 50, 'Capa 5: Mejora con entrenamiento');
+    
     const trainingEnhancement = await trainingLearningService.enhanceAnalysisWithTraining(
       analysis.filePath,
       preliminaryAnalysis,
@@ -211,6 +286,12 @@ async function performAnalysis(analysisId) {
       analysis.aiAnalysis = trainingEnhancement.enhancedAnalysis;
       console.log(`✨ Análisis mejorado con entrenamiento: confianza aumentada de ${trainingEnhancement.originalAnalysis.confidence}% a ${trainingEnhancement.enhancedAnalysis.confidence}%`);
       
+      WebSocketService.emitLayerComplete(analysisId, 5, 'Training Enhancement', {
+        enhanced: true,
+        improvementDelta: trainingEnhancement.improvementDelta,
+        matchCount: trainingEnhancement.enhancedAnalysis.trainingData?.matchCount || 0
+      });
+      
       // Guardar datos de mejora para auditoría
       analysis.trainingEnhancement = {
         enhanced: true,
@@ -221,6 +302,10 @@ async function performAnalysis(analysisId) {
     } else {
       analysis.aiAnalysis = preliminaryAnalysis;
       console.log('ℹ️ No se pudo mejorar con datos de entrenamiento');
+      
+      WebSocketService.emitLayerComplete(analysisId, 5, 'Training Enhancement', {
+        enhanced: false
+      });
       
       analysis.trainingEnhancement = {
         enhanced: false,
@@ -235,6 +320,7 @@ async function performAnalysis(analysisId) {
       
       if (latitude && longitude && datetime) {
         console.log('🌍 Iniciando validación externa con APIs...');
+        WebSocketService.emitProgress(analysisId, 60, 'Capa 6: Validación externa');
         console.log(`   Coordenadas: ${latitude}, ${longitude}`);
         console.log(`   Fecha/hora: ${datetime}`);
         
@@ -256,6 +342,11 @@ async function performAnalysis(analysisId) {
             matchCount: validationResult.matches ? validationResult.matches.length : 0,
             confidence: validationResult.confidence || 0
           };
+
+          WebSocketService.emitLayerComplete(analysisId, 6, 'Validación Externa', {
+            matchCount: validationResult.matches ? validationResult.matches.length : 0,
+            hasMatches: validationResult.matches && validationResult.matches.length > 0
+          });
 
           // Si hay coincidencias, agregar a recomendaciones
           if (validationResult.matches && validationResult.matches.length > 0) {
@@ -286,12 +377,165 @@ async function performAnalysis(analysisId) {
       console.log('ℹ️ No hay datos de ubicación/fecha para validación externa');
     }
 
+    // 3.6. ANÁLISIS METEOROLÓGICO Y ATMOSFÉRICO
+    if (analysis.exifData?.location) {
+      const { latitude, longitude } = analysis.exifData.location;
+      
+      if (latitude && longitude) {
+        console.log('🌤️  Obteniendo datos meteorológicos...');
+        WebSocketService.emitProgress(analysisId, 70, 'Capa 7: Análisis meteorológico');
+        
+        try {
+          const weatherData = await weatherService.getCurrentWeather(latitude, longitude);
+          
+          if (!weatherData.error) {
+            analysis.weatherData = weatherData;
+            console.log(`✅ Datos meteorológicos obtenidos: ${weatherData.conditions.description}, ${weatherData.temperature.current}°C`);
+            
+            WebSocketService.emitLayerComplete(analysisId, 7, 'Análisis Meteorológico', {
+              temperature: weatherData.temperature.current,
+              conditions: weatherData.conditions.description
+            });
+            
+            // Agregar análisis atmosférico a recomendaciones
+            if (weatherData.analysis) {
+              if (!analysis.aiAnalysis.recommendations) {
+                analysis.aiAnalysis.recommendations = [];
+              }
+              
+              if (weatherData.analysis.weather_explanation_probability === 'high' || 
+                  weatherData.analysis.weather_explanation_probability === 'very_high') {
+                analysis.aiAnalysis.recommendations.push(
+                  `⚠️ ALERTA METEOROLÓGICA: Condiciones climáticas con alta probabilidad de explicar el avistamiento`
+                );
+              }
+              
+              if (weatherData.analysis.warnings.length > 0) {
+                weatherData.analysis.warnings.forEach(warning => {
+                  analysis.aiAnalysis.recommendations.push(`🌤️  ${warning}`);
+                });
+              }
+            }
+            
+            // Comparar con fenómenos atmosféricos
+            console.log('☁️  Comparando con fenómenos atmosféricos conocidos...');
+            WebSocketService.emitProgress(analysisId, 80, 'Capa 8: Comparación atmosférica (23 fenómenos)');
+            
+            const atmosphericComparison = await atmosphericComparisonService.compareWithAtmosphericPhenomena(
+              analysis.visualAnalysis,
+              weatherData,
+              analysis.exifData
+            );
+            
+            if (!atmosphericComparison.error) {
+              analysis.atmosphericComparison = atmosphericComparison;
+              
+              if (atmosphericComparison.hasStrongMatch) {
+                const bestMatch = atmosphericComparison.bestMatch;
+                console.log(`🌩️  COINCIDENCIA ATMOSFÉRICA FUERTE: ${bestMatch.phenomenon.name} (${bestMatch.score}% confianza)`);
+                
+                WebSocketService.emitLayerComplete(analysisId, 8, 'Comparación Atmosférica', {
+                  phenomenon: bestMatch.phenomenon.name,
+                  score: bestMatch.score,
+                  hasStrongMatch: true
+                });
+                
+                if (!analysis.aiAnalysis.recommendations) {
+                  analysis.aiAnalysis.recommendations = [];
+                }
+                
+                analysis.aiAnalysis.recommendations.unshift(
+                  `☁️  FENÓMENO ATMOSFÉRICO: Alta probabilidad de ser "${bestMatch.phenomenon.name}" - ${bestMatch.phenomenon.description}`
+                );
+                
+                // Si la coincidencia es muy fuerte, ajustar categoría
+                if (bestMatch.score > 80) {
+                  analysis.aiAnalysis.category = 'natural';
+                  analysis.aiAnalysis.description = `Posible ${bestMatch.phenomenon.name}. ${bestMatch.explanation}`;
+                }
+              } else {
+                console.log(`ℹ️ Comparación atmosférica: ${atmosphericComparison.totalMatches} coincidencias encontradas`);
+                WebSocketService.emitLayerComplete(analysisId, 8, 'Comparación Atmosférica', {
+                  matchCount: atmosphericComparison.totalMatches,
+                  hasStrongMatch: false
+                });
+              }
+            }
+            
+          } else {
+            console.log('⚠️ Datos meteorológicos no disponibles:', weatherData.error);
+          }
+          
+        } catch (weatherError) {
+          console.error('❌ Error obteniendo datos meteorológicos:', weatherError.message);
+        }
+      }
+    }
+
+    // 3.7. CALCULAR CONFIANZA PONDERADA (fusionar todos los datos)
+    console.log('🎯 Calculando confianza ponderada con todos los datos...');
+    WebSocketService.emitProgress(analysisId, 90, 'Capa 9: Fusión de confianza');
+    
+    try {
+      const weightedResult = confidenceCalculatorService.calculateWeightedConfidence(
+        analysis.aiAnalysis,
+        analysis.externalValidation || {},
+        analysis.trainingEnhancement || {},
+        analysis.exifData || {},
+        analysis.visualAnalysis || null // NUEVO: incluir análisis visual
+      );
+
+      // Actualizar análisis con resultados ponderados
+      const originalConfidence = analysis.aiAnalysis.confidence;
+      const originalCategory = analysis.aiAnalysis.category;
+
+      analysis.aiAnalysis.confidence = weightedResult.finalConfidence;
+      analysis.aiAnalysis.category = weightedResult.finalCategory;
+      
+      WebSocketService.emitLayerComplete(analysisId, 9, 'Confianza Ponderada', {
+        finalConfidence: weightedResult.finalConfidence,
+        originalConfidence: originalConfidence,
+        adjustments: weightedResult.adjustments
+      });
+      analysis.aiAnalysis.description = weightedResult.finalDescription;
+
+      // Guardar desglose de confianza para auditoría
+      analysis.confidenceBreakdown = weightedResult.breakdown;
+      analysis.confidenceAdjustments = weightedResult.adjustments;
+      analysis.confidenceExplanation = weightedResult.explanation;
+
+      // Agregar explicación a recomendaciones
+      if (!analysis.aiAnalysis.recommendations) {
+        analysis.aiAnalysis.recommendations = [];
+      }
+      analysis.aiAnalysis.recommendations.push(
+        `CONFIANZA PONDERADA: ${weightedResult.explanation}`
+      );
+
+      console.log(`🎯 Confianza ajustada: ${originalConfidence}% → ${weightedResult.finalConfidence}%`);
+      if (originalCategory !== weightedResult.finalCategory) {
+        console.log(`📝 Categoría ajustada: "${originalCategory}" → "${weightedResult.finalCategory}"`);
+      }
+
+    } catch (confidenceError) {
+      console.error('❌ Error al calcular confianza ponderada:', confidenceError.message);
+      // No bloquear el análisis si falla el cálculo de confianza
+    }
+
     // 4. Actualizar estado
     analysis.status = 'completed';
     analysis.errorMessage = null;
     
     await analysis.save();
     console.log(`✅ Análisis guardado: ${analysis.fileName}`);
+    
+    // Emitir evento de análisis completado
+    WebSocketService.emitProgress(analysisId, 100, 'Análisis completado');
+    WebSocketService.emitAnalysisComplete(analysisId, {
+      status: 'completed',
+      confidence: analysis.aiAnalysis?.confidence || 0,
+      category: analysis.aiAnalysis?.category || 'unknown'
+    });
 
     // 5. Enviar notificación al usuario
     await NotificationService.notifyAnalysisCompleted(
@@ -311,6 +555,12 @@ async function performAnalysis(analysisId) {
       analysis.status = 'error';
       analysis.errorMessage = error.message;
       await analysis.save();
+      
+      // Emitir evento de error por WebSocket
+      WebSocketService.emitAnalysisError(analysisId, {
+        message: error.message,
+        stack: error.stack
+      });
     }
   }
 }

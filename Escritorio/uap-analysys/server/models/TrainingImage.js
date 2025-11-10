@@ -39,6 +39,10 @@ const trainingImageSchema = new mongoose.Schema({
       'light_trail',            // Estela de luz (larga exposición)
       'camera_artifact',        // Artefacto de cámara (sensor, polvo)
       
+      // Imágenes falsas/fabricadas
+      'fake',                   // Imagen generada por IA/CGI/manipulada
+      'hoax',                   // Montaje intencional/broma
+      
       // Otros
       'kite',                   // Cometa/papalote
       'insect',                 // Insecto cerca de lente
@@ -117,6 +121,13 @@ const trainingImageSchema = new mongoose.Schema({
     trim: true
   }],
 
+  // NUEVO: Palabras clave para matching textual/semántico
+  keywords: [{
+    type: String,
+    lowercase: true,
+    trim: true
+  }],
+
   // Estado de verificación
   isActive: {
     type: Boolean,
@@ -177,6 +188,17 @@ const trainingImageSchema = new mongoose.Schema({
   notes: {
     type: String,
     maxlength: 2000
+  },
+
+  // NUEVO: Tracking de promoción a biblioteca visual
+  promotedToLibrary: {
+    type: Boolean,
+    default: false
+  },
+
+  libraryEntryId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'UFODatabase'
   }
 
 }, {

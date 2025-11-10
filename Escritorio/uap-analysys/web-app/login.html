@@ -585,7 +585,10 @@
     </div>
 
     <script>
-        const API_URL = 'http://localhost:3000';
+        // API URL dinámica - usa localhost en local, Railway en producción
+        const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:3000'
+            : 'https://TU-BACKEND-EN-RAILWAY.railway.app'; // CAMBIAR ESTO después de desplegar en Railway
 
         // Verificar si ya está logueado
         if (localStorage.getItem('token')) {

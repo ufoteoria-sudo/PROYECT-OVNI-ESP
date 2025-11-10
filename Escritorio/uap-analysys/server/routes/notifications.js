@@ -53,6 +53,17 @@ router.get('/unread-count', auth, async (req, res) => {
   }
 });
 
+// Ruta alternativa con barra (alias)
+router.get('/unread/count', auth, async (req, res) => {
+  try {
+    const count = await Notification.getUnreadCount(req.user._id);
+    res.json({ count });
+  } catch (error) {
+    console.error('Error obteniendo conteo:', error);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+});
+
 // Marcar notificación como leída
 router.put('/:id/read', auth, async (req, res) => {
   try {

@@ -1,8 +1,105 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const Analysis = require('../models/Analysis');
 const auth = require('../middleware/auth');
 const isAdmin = require('../middleware/isAdmin');
+
+// Obtener estadísticas del usuario (sin autenticación para WordPress)
+router.get('/stats', async (req, res) => {
+  try {
+    // En producción deberías obtener el userId del token o sesión
+    // Por ahora devolvemos estadísticas agregadas
+    
+    const total = await Analysis.countDocuments();
+    const completed = await Analysis.countDocuments({ status: 'completed' });
+    const processing = await Analysis.countDocuments({ 
+      status: { $in: ['pending', 'analyzing', 'uploading'] } 
+    });
+    
+    res.json({
+      success: true,
+      data: {
+        total: total,
+        uploaded: total,
+        completed: completed,
+        processing: processing
+      }
+    });
+  } catch (err) {
+    console.error('Error obteniendo stats:', err);
+    res.status(500).json({ 
+      success: false,
+      error: 'Error al obtener estadísticas.',
+      data: { total: 26, uploaded: 26, completed: 26, processing: 0 } // Fallback
+    });
+  }
+});
+
+// Obtener reportes del usuario (sin autenticación para WordPress)
+router.get('/reports', async (req, res) => {
+  try {
+    const { page = 1, limit = 20, search = '', status = '', type = '' } = req.query;
+    
+    const query = {};
+    
+    if (search) {
+      query.$or = [
+        { fileName: { $regex: search, $options: 'i' } },
+        { 'exifData.location.address': { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    if (status) {
+      query.status = status;
+    }
+    
+    if (type) {
+      query.fileType = type;
+    }
+    
+    const skip = (page - 1) * limit;
+    
+    const reports = await Analysis.find(query)
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip(parseInt(skip))
+      .select('fileName fileType status createdAt exifData.location aiAnalysis.confidence')
+      .lean();
+    
+    const total = await Analysis.countDocuments(query);
+    
+    // Formatear respuesta
+    const formattedReports = reports.map(report => ({
+      _id: report._id,
+      fileName: report.fileName,
+      fileType: report.fileType || 'image',
+      status: report.status || 'pending',
+      createdAt: report.createdAt,
+      imageUrl: `https://via.placeholder.com/60?text=${report.fileName}`,
+      exifData: report.exifData,
+      aiAnalysis: report.aiAnalysis
+    }));
+    
+    res.json({
+      success: true,
+      data: formattedReports,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(total / limit)
+      }
+    });
+    
+  } catch (err) {
+    console.error('Error obteniendo reportes:', err);
+    res.status(500).json({ 
+      success: false,
+      error: 'Error al obtener reportes.' 
+    });
+  }
+});
 
 // Listar todos los usuarios (solo admin)
 router.get('/', auth, isAdmin, async (req, res) => {
