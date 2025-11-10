@@ -17,9 +17,9 @@
 
 4. **Agregar variables de entorno** en Railway:
    ```
-   MONGO_URI=mongodb+srv://ufologiateorica_db_user:cLgcnGkU2b2IFICc@uap-cluster.qoa9hel.mongodb.net/uap-db?retryWrites=true&w=majority&appName=UAP-Cluster
+   MONGO_URI=tu_mongodb_uri_aqui
    JWT_SECRET=uap-secret-key-super-secure-2025-change-in-production
-   HF_TOKEN=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
+   HF_TOKEN=tu_hugging_face_token_aqui
    N2YO_API_KEY=your_n2yo_api_key_here
    FLIGHTRADAR24_API_KEY=your_flightradar24_api_key_here
    OPENWEATHER_API_KEY=your_openweather_api_key_here
