@@ -3,7 +3,7 @@ const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:3000/api'
     : 'https://tu-api-backend.com/api'; // Cambiar cuando tengas el backend en producción
 
-// Sistema de navegación SPA
+// Sistema de navegación
 const app = {
     currentPage: 'dashboard',
     
@@ -22,8 +22,8 @@ const app = {
                     this.loadPage(page);
                     
                     // Actualizar clase active
-                    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-                    link.closest('.nav-item').classList.add('active');
+                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
                 }
             });
         });
@@ -40,7 +40,7 @@ const app = {
         const content = document.getElementById('main-content');
         
         // Mostrar loading
-        content.innerHTML = '<div class="loading"><div class="loading-spinner">⏳</div><p>Cargando...</p></div>';
+        content.innerHTML = '<div class="loading text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-3">Cargando...</p></div>';
         
         // Cargar contenido de la página
         setTimeout(() => {
@@ -52,11 +52,35 @@ const app = {
                     PageInit[pageName]();
                 }
             } else {
-                content.innerHTML = '<div class="page-header"><h1 class="page-title">Página no encontrada</h1></div>';
+                content.innerHTML = '<div class="alert alert-warning">Página no encontrada</div>';
             }
         }, 300);
     }
 };
+
+// Funciones globales para compatibilidad
+function showSection(section) {
+    const pageMap = {
+        'dashboard': 'dashboard',
+        'profile': 'perfil',
+        'uploads': 'subir-analisis',
+        'reports': 'mis-reportes',
+        'biblioteca': 'biblioteca',
+        'libraryAdmin': 'admin-biblioteca',
+        'training': 'admin-training',
+        'siteConfig': 'admin-config'
+    };
+    
+    const page = pageMap[section] || section;
+    app.loadPage(page);
+}
+
+function logout() {
+    if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+        localStorage.removeItem('token');
+        window.location.href = '/';
+    }
+}
 
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {

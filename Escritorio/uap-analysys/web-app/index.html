@@ -10,123 +10,114 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <div class="dashboard-wrapper">
-        <!-- SIDEBAR -->
-        <aside class="sidebar">
-            <!-- Header -->
-            <div class="sidebar-header">
-                <div class="logo-container">
-                    <div class="logo-classified">CLASIFICADO</div>
-                    <h3 class="logo-title">UAP SYSTEM</h3>
-                    <div class="logo-subtitle">v3.0 HÍBRIDO</div>
-                </div>
+    <!-- Navbar Superior -->
+    <nav class="navbar navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-disc"></i> UAP Analysis System
+            </a>
+            <div class="d-flex align-items-center gap-3">
+                <!-- Notificaciones -->
+                <a href="#" class="position-relative text-white text-decoration-none" title="Notificaciones">
+                    <i class="bi bi-bell-fill" style="font-size: 1.5rem;"></i>
+                    <span id="notificationBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        3
+                    </span>
+                </a>
+                
+                <span class="text-white">
+                    <i class="bi bi-person-circle"></i> 
+                    <span id="userName">Admin UAP</span>
+                </span>
+                <button class="btn btn-outline-light btn-sm" onclick="logout()">
+                    <i class="bi bi-box-arrow-right"></i> Salir
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar">
+                <nav class="nav flex-column">
+                    <a class="nav-link active" href="#" onclick="showSection('dashboard')" data-page="dashboard">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                    <a class="nav-link" href="#" onclick="showSection('profile')" data-page="perfil">
+                        <i class="bi bi-person"></i> Mi Perfil
+                    </a>
+                    <a class="nav-link" href="#" onclick="showSection('uploads')" data-page="subir-analisis">
+                        <i class="bi bi-cloud-upload"></i> Subir Análisis
+                    </a>
+                    <a class="nav-link" href="#" onclick="showSection('reports')" data-page="mis-reportes">
+                        <i class="bi bi-file-earmark-text"></i> Mis Reportes
+                    </a>
+                    <a class="nav-link" href="#" onclick="showSection('biblioteca')" data-page="biblioteca">
+                        <i class="bi bi-book"></i> Biblioteca Visual
+                    </a>
+                    <!-- ADMIN -->
+                    <a class="nav-link admin-only" href="#" onclick="showSection('libraryAdmin')" data-page="admin-biblioteca">
+                        <i class="bi bi-book-half"></i> Admin - Gestión Biblioteca
+                    </a>
+                    <a class="nav-link admin-only" href="#" onclick="showSection('training')" data-page="admin-training">
+                        <i class="bi bi-database-fill-add"></i> Admin - Entrada de Datos
+                    </a>
+                    <a class="nav-link admin-only" href="#" onclick="showSection('siteConfig')" data-page="admin-config">
+                        <i class="bi bi-gear-fill"></i> Admin - Configuración
+                    </a>
+                    <a class="nav-link" href="#" onclick="showSection('donate')">
+                        <i class="bi bi-heart-fill"></i> Donar
+                    </a>
+                    <a class="nav-link" href="https://ufoteoria.com" target="_blank">
+                        <i class="bi bi-globe"></i> Nuestra Web
+                    </a>
+                </nav>
             </div>
 
-            <!-- Perfil de Usuario -->
-            <div class="user-profile">
-                <div class="avatar-container">
-                    <img src="https://ui-avatars.com/api/?name=Admin+UAP&size=60&background=667eea&color=fff&bold=true" alt="Avatar" class="user-avatar">
+            <!-- Main Content -->
+            <div class="col-md-10 content-area">
+                <!-- Welcome Card -->
+                <div class="card welcome-card">
+                    <!-- OVNI Animado -->
+                    <div class="ufo-animated">
+                        <div class="ufo-body">
+                            <div class="ufo-dome"></div>
+                            <div class="ufo-disc"></div>
+                            <div class="ufo-lights">
+                                <div class="ufo-light"></div>
+                                <div class="ufo-light"></div>
+                                <div class="ufo-light"></div>
+                                <div class="ufo-light"></div>
+                                <div class="ufo-light"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2>¡Bienvenido <span id="userFirstName">Admin UAP</span>!</h2>
+                            <p class="mb-2">
+                                <i class="bi bi-envelope"></i> 
+                                <span id="userEmail">admin@uap.system</span>
+                            </p>
+                            <span class="badge-role bg-light text-dark" id="userRole">Administrador</span>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <i class="bi bi-person-circle" style="font-size: 80px; color: #ffd700; filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));"></i>
+                        </div>
+                    </div>
                 </div>
-                <div class="user-info">
-                    <div class="user-name">Admin UAP</div>
-                    <div class="user-email">admin@uap.system</div>
-                    <span class="user-badge">Administrador</span>
+
+                <!-- Dashboard Section -->
+                <div id="main-content">
+                    <!-- El contenido se carga dinámicamente aquí -->
                 </div>
             </div>
-
-            <!-- Navegación -->
-            <nav class="sidebar-nav">
-                <ul class="nav-list">
-                    <li class="nav-item active">
-                        <a href="#dashboard" class="nav-link" data-page="dashboard">
-                            <i class="icon">🏠</i>
-                            <span>Dashboard</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#perfil" class="nav-link" data-page="perfil">
-                            <i class="icon">👤</i>
-                            <span>Mi Perfil</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#subir-analisis" class="nav-link" data-page="subir-analisis">
-                            <i class="icon">📤</i>
-                            <span>Subir Análisis</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#mis-reportes" class="nav-link" data-page="mis-reportes">
-                            <i class="icon">📋</i>
-                            <span>Mis Reportes</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#biblioteca" class="nav-link" data-page="biblioteca">
-                            <i class="icon">📚</i>
-                            <span>Biblioteca Visual</span>
-                        </a>
-                    </li>
-
-                    <!-- Separador Admin -->
-                    <li class="nav-separator">
-                        <span>ADMINISTRACIÓN</span>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#admin-biblioteca" class="nav-link" data-page="admin-biblioteca">
-                            <i class="icon">⚙️</i>
-                            <span>Gestión Biblioteca</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#admin-training" class="nav-link" data-page="admin-training">
-                            <i class="icon">🎓</i>
-                            <span>Entrada de Datos</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#admin-config" class="nav-link" data-page="admin-config">
-                            <i class="icon">🔧</i>
-                            <span>Configuración</span>
-                        </a>
-                    </li>
-
-                    <!-- Separador Enlaces -->
-                    <li class="nav-separator">
-                        <span>ENLACES</span>
-                    </li>
-                    <li class="nav-item">
-                        <a href="https://ko-fi.com/ufoteoria" target="_blank" class="nav-link">
-                            <i class="icon">💝</i>
-                            <span>Donar</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="https://ufoteoria.com" target="_blank" class="nav-link">
-                            <i class="icon">🌐</i>
-                            <span>Nuestra Web</span>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-
-            <!-- Footer -->
-            <div class="sidebar-footer">
-                <div class="footer-badge">
-                    <span class="badge-icon">🔓</span>
-                    <span class="badge-text">Open Source</span>
-                </div>
-                <div class="footer-text">Proyecto 100% gratuito</div>
-                <div class="footer-level">NIVEL DE ACCESO: PÚBLICO</div>
-            </div>
-        </aside>
-
-        <!-- CONTENIDO PRINCIPAL -->
-        <main class="main-content" id="main-content">
-            <!-- El contenido se carga dinámicamente aquí -->
-        </main>
+        </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/app.js"></script>
     <script src="js/pages.js"></script>
 </body>

@@ -2,111 +2,116 @@
 const Pages = {
     // ========== DASHBOARD ==========
     dashboard: () => `
-        <div class="page-header">
-            <h1 class="page-title">¡Bienvenido de nuevo, Admin UAP! <span class="badge-role">Administrador</span></h1>
-            <p class="page-subtitle">Panel de control del Sistema de Análisis UAP v3.0 Híbrido</p>
+        <h3 class="mb-4">Panel de Control</h3>
+        
+        <div class="row">
+            <div class="col-md-3 mb-4">
+                <div class="card stat-card">
+                    <div class="text-center">
+                        <i class="bi bi-cloud-upload stat-icon text-primary"></i>
+                        <h3 class="mt-3" id="totalAnalysisCount">127</h3>
+                        <p class="text-muted">Análisis Subidos</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-4">
+                <div class="card stat-card">
+                    <div class="text-center">
+                        <i class="bi bi-file-earmark-check stat-icon text-success"></i>
+                        <h3 class="mt-3" id="completedAnalysisCount">45</h3>
+                        <p class="text-muted">Completados</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-4">
+                <div class="card stat-card">
+                    <div class="text-center">
+                        <i class="bi bi-hourglass-split stat-icon text-warning"></i>
+                        <h3 class="mt-3" id="processingAnalysisCount">7</h3>
+                        <p class="text-muted">En Proceso</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-4">
+                <div class="card stat-card">
+                    <div class="text-center">
+                        <i class="bi bi-graph-up stat-icon text-info"></i>
+                        <h3 class="mt-3">97%</h3>
+                        <p class="text-muted">Precisión</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Stats Grid -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon">🎯</div>
-                <div class="stat-info">
-                    <div class="stat-label">Panel de Control</div>
-                    <div class="stat-value" id="stat-panel">-</div>
+        <!-- Expediente Sistema Híbrido -->
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="retro-file-container">
+                    <div class="retro-file-header">
+                        <div class="file-stamp">CLASIFICADO</div>
+                        <h3 class="file-title">
+                            <i class="bi bi-file-earmark-text"></i> 
+                            EXPEDIENTE: SISTEMA UAP v3.0 - HÍBRIDO
+                        </h3>
+                        <div class="file-id">ID: UAP-SYS-2025-001-H3</div>
+                    </div>
+                    
+                    <div class="card retro-card mt-3">
+                        <div class="card-body">
+                            <h4 class="retro-title">🔬 SISTEMA DE ANÁLISIS TRICAPA</h4>
+                            
+                            <div class="row mt-4">
+                                <div class="col-md-4">
+                                    <div class="layer-box">
+                                        <h5>🔍 CAPA 1: OpenCV</h5>
+                                        <p class="small">Análisis Técnico Científico</p>
+                                        <ul class="small">
+                                            <li>Detección de objetos</li>
+                                            <li>Análisis de movimiento</li>
+                                            <li>Procesamiento de imagen</li>
+                                        </ul>
+                                        <span class="badge bg-success">✅ Operativo</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <div class="layer-box">
+                                        <h5>🎓 CAPA 2: Training Dataset</h5>
+                                        <p class="small">Clasificación Supervisada</p>
+                                        <ul class="small">
+                                            <li>500+ casos documentados</li>
+                                            <li>Patrones UAP conocidos</li>
+                                            <li>Machine Learning</li>
+                                        </ul>
+                                        <span class="badge bg-success">✅ Operativo</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <div class="layer-box">
+                                        <h5>🤖 CAPA 3: Llama Vision</h5>
+                                        <p class="small">IA de Última Generación</p>
+                                        <ul class="small">
+                                            <li>Análisis contextual</li>
+                                            <li>Detección de anomalías</li>
+                                            <li>Verificación cruzada</li>
+                                        </ul>
+                                        <span class="badge bg-success">✅ Operativo</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info mt-4">
+                                <strong>🛡️ Sistema de Validación Triangular:</strong> 
+                                Cada análisis pasa por tres capas independientes de verificación. 
+                                Solo cuando las tres capas coinciden en un resultado, el análisis se considera validado.
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">📤</div>
-                <div class="stat-info">
-                    <div class="stat-label">Análisis Subidos</div>
-                    <div class="stat-value" id="stat-subidos">-</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">✅</div>
-                <div class="stat-info">
-                    <div class="stat-label">Completados</div>
-                    <div class="stat-value" id="stat-completados">-</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">⏳</div>
-                <div class="stat-info">
-                    <div class="stat-label">En Proceso</div>
-                    <div class="stat-value" id="stat-proceso">-</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sistema Híbrido -->
-        <div class="hybrid-system-card">
-            <div class="classified-header">
-                <div class="classified-badge">🔒 CLASIFICADO</div>
-                <h2 class="classified-title">UAP Analysis System</h2>
-                <div class="classified-id">ID: UAP-SYS-2025-HYBRID-v3.0</div>
-            </div>
-
-            <div class="system-badges">
-                <span class="sys-badge">🔬 Científico</span>
-                <span class="sys-badge">🤖 IA Avanzada</span>
-                <span class="sys-badge">🛡️ Verificación Multi-Capa</span>
-            </div>
-
-            <h3 class="hybrid-title">⚡ SISTEMA HÍBRIDO DE 3 CAPAS ⚡</h3>
-
-            <div class="layers-grid">
-                <div class="layer-card">
-                    <div class="layer-icon">🔍</div>
-                    <h4 class="layer-title">Capa 1: OpenCV</h4>
-                    <p class="layer-tech">
-                        <strong>Análisis Técnico Científico</strong><br>
-                        • Detección de objetos<br>
-                        • Análisis de movimiento<br>
-                        • Procesamiento de imagen<br>
-                        • Eliminación de ruido
-                    </p>
-                    <div class="layer-status">✅ Operativo</div>
-                </div>
-
-                <div class="layer-card">
-                    <div class="layer-icon">🎓</div>
-                    <h4 class="layer-title">Capa 2: Training Dataset</h4>
-                    <p class="layer-tech">
-                        <strong>Clasificación Supervisada</strong><br>
-                        • 500+ casos documentados<br>
-                        • Patrones UAP conocidos<br>
-                        • Falsificaciones comunes<br>
-                        • Machine Learning
-                    </p>
-                    <div class="layer-status">✅ Operativo</div>
-                </div>
-
-                <div class="layer-card">
-                    <div class="layer-icon">🤖</div>
-                    <h4 class="layer-title">Capa 3: Llama Vision</h4>
-                    <p class="layer-tech">
-                        <strong>IA de Última Generación</strong><br>
-                        • Análisis contextual<br>
-                        • Detección de anomalías<br>
-                        • Verificación cruzada<br>
-                        • Interpretación avanzada
-                    </p>
-                    <div class="layer-status">✅ Operativo</div>
-                </div>
-            </div>
-
-            <div class="system-description">
-                <p>
-                    <strong>Sistema de Validación Triangular:</strong> 
-                    Cada análisis pasa por tres capas independientes de verificación. 
-                    Solo cuando las tres capas coinciden en un resultado, el análisis se considera validado. 
-                    Este enfoque multi-capa reduce errores en un 97% y garantiza la máxima precisión científica.
-                </p>
-            </div>
-
-            <div class="system-footer">
-                🛡️ Nivel de confianza: MÁXIMO | Sistema operativo al 100%
             </div>
         </div>
     `,
