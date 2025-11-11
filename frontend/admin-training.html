@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Entrenamiento - Sistema UAP</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .training-container {
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.15);
+        }
+
+        .card-header {
+            background: var(--primary-gradient);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 20px;
+        }
+
+        .upload-zone {
+            border: 3px dashed #ccc;
+            border-radius: 15px;
+            padding: 60px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .upload-zone:hover, .upload-zone.drag-over {
+            border-color: #667eea;
+            background: #e7eeff;
+            transform: scale(1.02);
+        }
+
+        .upload-zone i {
+            font-size: 4rem;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .preview-container {
+            position: relative;
+            display: inline-block;
+            margin: 20px 0;
+        }
+
+        .preview-image {
+            max-width: 400px;
+            max-height: 400px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .remove-preview {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            border: 3px solid white;
+            transition: all 0.3s ease;
+        }
+
+        .remove-preview:hover {
+            background: #c82333;
+            transform: scale(1.1);
+        }
+
+        .category-badge {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+            margin: 5px;
+        }
+
+        .stats-card {
+            background: var(--primary-gradient);
+            color: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .stats-card h3 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .stats-card p {
+            margin: 0;
+            opacity: 0.9;
+        }
+
+        .training-table {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .training-table img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .btn-gradient {
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+            color: white;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .badge-active {
+            background: #28a745;
+        }
+
+        .badge-inactive {
+            background: #dc3545;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .spinner-border-lg {
+            width: 4rem;
+            height: 4rem;
+        }
+
+        .pagination {
+            margin-top: 30px;
+        }
+
+        .page-link {
+            border-radius: 10px;
+            margin: 0 5px;
+            border: none;
+            color: #667eea;
+        }
+
+        .page-link:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .page-item.active .page-link {
+            background: #667eea;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="dashboard.html">
+                <i class="bi bi-robot"></i> Sistema UAP
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html">
+                            <i class="bi bi-house-fill"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="admin-panel.html">
+                            <i class="bi bi-gear-fill"></i> Admin Panel
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="admin-training.html">
+                            <i class="bi bi-database-fill-add"></i> Entrenamiento
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="logout()">
+                            <i class="bi bi-box-arrow-right"></i> Salir
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="text-center text-white">
+            <div class="spinner-border spinner-border-lg" role="status"></div>
+            <p class="mt-3 h5">Procesando...</p>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="training-container">
+        <!-- Header -->
+        <div class="text-center text-white mb-4">
+            <h1 class="display-4 fw-bold">
+                <i class="bi bi-database-fill-add"></i> Panel de Entrenamiento
+            </h1>
+            <p class="lead">Sube imágenes de referencia para mejorar la precisión del sistema de análisis</p>
+        </div>
+
+        <!-- Statistics Row -->
+        <div class="row" id="statsRow">
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <i class="bi bi-images" style="font-size: 2rem;"></i>
+                    <h3 id="totalImages">0</h3>
+                    <p>Total Imágenes</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card" style="background: var(--secondary-gradient);">
+                    <i class="bi bi-check-circle-fill" style="font-size: 2rem;"></i>
+                    <h3 id="verifiedImages">0</h3>
+                    <p>Verificadas</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card" style="background: var(--success-gradient);">
+                    <i class="bi bi-grid-3x3-gap-fill" style="font-size: 2rem;"></i>
+                    <h3 id="totalCategories">0</h3>
+                    <p>Categorías</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                    <i class="bi bi-graph-up-arrow" style="font-size: 2rem;"></i>
+                    <h3 id="avgAccuracy">0%</h3>
+                    <p>Precisión Promedio</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Card -->
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="bi bi-cloud-upload-fill"></i> Subir Nueva Imagen de Entrenamiento
+                </h4>
+            </div>
+            <div class="card-body">
+                <form id="uploadForm">
+                    <div class="row">
+                        <!-- Upload Zone -->
+                        <div class="col-md-12">
+                            <div class="upload-zone" id="uploadZone">
+                                <i class="bi bi-cloud-arrow-up-fill"></i>
+                                <h4>Arrastra una imagen aquí</h4>
+                                <p class="text-muted">o haz clic para seleccionar</p>
+                                <p class="small text-muted">Formatos: JPG, PNG, WebP (máx. 10MB)</p>
+                                <input type="file" id="imageInput" accept="image/jpeg,image/jpg,image/png,image/webp" style="display: none;">
+                            </div>
+                            <div id="preview Container" class="preview-container" style="display: none;"></div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <!-- Category Selection -->
+                        <div class="col-md-6">
+                            <label for="category" class="form-label">
+                                <i class="bi bi-tag-fill"></i> Categoría *
+                            </label>
+                            <select class="form-select" id="category" required>
+                                <option value="">Seleccionar categoría...</option>
+                                <option value="aircraft_commercial">🛫 Avión Comercial</option>
+                                <option value="aircraft_military">✈️ Avión Militar</option>
+                                <option value="aircraft_private">🛩️ Avión Privado</option>
+                                <option value="drone">🚁 Dron/UAV</option>
+                                <option value="helicopter">🚁 Helicóptero</option>
+                                <option value="balloon">🎈 Globo Aerostático</option>
+                                <option value="satellite">🛰️ Satélite</option>
+                                <option value="bird">🦅 Ave</option>
+                                <option value="celestial">🌙 Objeto Celestial</option>
+                                <option value="atmospheric">☁️ Fenómeno Atmosférico</option>
+                                <option value="kite">🪁 Cometa</option>
+                                <option value="rocket">🚀 Cohete</option>
+                                <option value="debris">🗑️ Basura Espacial</option>
+                                <option value="other">❓ Otro</option>
+                            </select>
+                        </div>
+
+                        <!-- Type -->
+                        <div class="col-md-6">
+                            <label for="type" class="form-label">
+                                <i class="bi bi-info-circle-fill"></i> Tipo Específico *
+                            </label>
+                            <input type="text" class="form-control" id="type" placeholder="Ej: Boeing 737-800, DJI Phantom 4, ISS" required>
+                            <div class="form-text">Modelo o nombre específico del objeto</div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <label for="description" class="form-label">
+                                <i class="bi bi-card-text"></i> Descripción *
+                            </label>
+                            <textarea class="form-control" id="description" rows="3" placeholder="Descripción detallada del objeto..." required></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Technical Data (Optional) -->
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#technicalData">
+                                <i class="bi bi-plus-circle"></i> Agregar Datos Técnicos (Opcional)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="collapse mt-3" id="technicalData">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label for="manufacturer" class="form-label">Fabricante</label>
+                                <input type="text" class="form-control" id="manufacturer" placeholder="Ej: Boeing, DJI">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="model" class="form-label">Modelo</label>
+                                <input type="text" class="form-control" id="model" placeholder="Ej: 737-800">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="wingspan" class="form-label">Envergadura (m)</label>
+                                <input type="number" step="0.1" class="form-control" id="wingspan" placeholder="Ej: 35.8">
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-4">
+                                <label for="length" class="form-label">Longitud (m)</label>
+                                <input type="number" step="0.1" class="form-control" id="length" placeholder="Ej: 39.5">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="maxSpeed" class="form-label">Velocidad Máx (km/h)</label>
+                                <input type="number" class="form-control" id="maxSpeed" placeholder="Ej: 850">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="cruiseAltitude" class="form-label">Altitud Crucero (m)</label>
+                                <input type="number" class="form-control" id="cruiseAltitude" placeholder="Ej: 11000">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visual Features (Optional) -->
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#visualFeatures">
+                                <i class="bi bi-plus-circle"></i> Agregar Características Visuales (Opcional)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="collapse mt-3" id="visualFeatures">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="shape" class="form-label">Forma</label>
+                                <input type="text" class="form-control" id="shape" placeholder="Ej: Cilíndrica con alas">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="colors" class="form-label">Colores (separados por coma)</label>
+                                <input type="text" class="form-control" id="colors" placeholder="Ej: Blanco, Azul, Rojo">
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6">
+                                <label for="lightPattern" class="form-label">Patrón de Luces</label>
+                                <input type="text" class="form-control" id="lightPattern" placeholder="Ej: Luces intermitentes rojo/verde">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="commonAltitude" class="form-label">Altitud Típica</label>
+                                <input type="text" class="form-control" id="commonAltitude" placeholder="Ej: 10000-12000m">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <label for="tags" class="form-label">
+                                <i class="bi bi-tags-fill"></i> Etiquetas (separadas por coma)
+                            </label>
+                            <input type="text" class="form-control" id="tags" placeholder="Ej: comercial, boeing, transporte, pasajeros">
+                            <div class="form-text">Palabras clave para búsqueda</div>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <label for="notes" class="form-label">
+                                <i class="bi bi-pencil-fill"></i> Notas Adicionales
+                            </label>
+                            <textarea class="form-control" id="notes" rows="2" placeholder="Información adicional relevante..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Submit -->
+                    <div class="row mt-4">
+                        <div class="col-md-12 text-center">
+                            <button type="submit" class="btn btn-gradient btn-lg">
+                                <i class="bi bi-upload"></i> Subir Imagen de Entrenamiento
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-lg ms-2" onclick="resetForm()">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Success/Error Messages -->
+                <div id="uploadMessage" class="mt-3"></div>
+            </div>
+        </div>
+
+        <!-- Training Images List -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="bi bi-collection-fill"></i> Imágenes de Entrenamiento
+                </h4>
+                <div>
+                    <select class="form-select form-select-sm" id="filterCategory" style="width: 200px; display: inline-block;">
+                        <option value="">Todas las categorías</option>
+                    </select>
+                    <button class="btn btn-sm btn-outline-light ms-2" onclick="loadTrainingImages()">
+                        <i class="bi bi-arrow-clockwise"></i> Recargar
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive training-table">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Imagen</th>
+                                <th>Tipo</th>
+                                <th>Categoría</th>
+                                <th>Subido por</th>
+                                <th>Fecha</th>
+                                <th>Usos</th>
+                                <th>Precisión</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trainingTableBody">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <nav>
+                    <ul class="pagination justify-content-center" id="pagination">
+                        <!-- Populated by JavaScript -->
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="modal fade" id="editModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil-square"></i> Editar Imagen de Entrenamiento
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editForm">
+                        <input type="hidden" id="editImageId">
+                        
+                        <div class="mb-3">
+                            <label for="editCategory" class="form-label">Categoría</label>
+                            <select class="form-select" id="editCategory">
+                                <option value="aircraft_commercial">🛫 Avión Comercial</option>
+                                <option value="aircraft_military">✈️ Avión Militar</option>
+                                <option value="aircraft_private">🛩️ Avión Privado</option>
+                                <option value="drone">🚁 Dron/UAV</option>
+                                <option value="helicopter">🚁 Helicóptero</option>
+                                <option value="balloon">🎈 Globo</option>
+                                <option value="satellite">🛰️ Satélite</option>
+                                <option value="bird">🦅 Ave</option>
+                                <option value="celestial">🌙 Celestial</option>
+                                <option value="atmospheric">☁️ Atmosférico</option>
+                                <option value="other">❓ Otro</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editType" class="form-label">Tipo</label>
+                            <input type="text" class="form-control" id="editType">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editDescription" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="editDescription" rows="3"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editTags" class="form-label">Etiquetas</label>
+                            <input type="text" class="form-control" id="editTags">
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="editIsActive">
+                                <label class="form-check-label" for="editIsActive">
+                                    Imagen activa
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editNotes" class="form-label">Notas</label>
+                            <textarea class="form-control" id="editNotes" rows="2"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-gradient" onclick="saveEdit()">
+                        <i class="bi bi-save"></i> Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+        let currentPage = 1;
+        let selectedFile = null;
+        let editModal = null;
+
+        // Check authentication
+        window.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            const userRole = localStorage.getItem('userRole');
+            
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            if (userRole !== 'admin') {
+                alert('Acceso denegado. Solo administradores pueden acceder a esta página.');
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            editModal = new bootstrap.Modal(document.getElementById('editModal'));
+            
+            // Load initial data
+            loadStatistics();
+            loadTrainingImages();
+            setupDragAndDrop();
+            setupFormSubmit();
+            populateFilterCategories();
+        });
+
+        // Statistics
+        async function loadStatistics() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_URL}/training/stats/categories`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Error loading statistics');
+
+                const data = await response.json();
+                
+                document.getElementById('totalImages').textContent = data.total || 0;
+                document.getElementById('totalCategories').textContent = data.stats.length || 0;
+                
+                const verified = data.stats.reduce((sum, cat) => sum + cat.verified, 0);
+                document.getElementById('verifiedImages').textContent = verified;
+                
+                const avgAcc = data.stats.reduce((sum, cat) => sum + (cat.avgAccuracy || 0), 0) / (data.stats.length || 1);
+                document.getElementById('avgAccuracy').textContent = Math.round(avgAcc) + '%';
+
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+            }
+        }
+
+        // Drag and Drop
+        function setupDragAndDrop() {
+            const uploadZone = document.getElementById('uploadZone');
+            const imageInput = document.getElementById('imageInput');
+
+            uploadZone.addEventListener('click', () => imageInput.click());
+
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('drag-over');
+            });
+
+            uploadZone.addEventListener('dragleave', () => {
+                uploadZone.classList.remove('drag-over');
+            });
+
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('drag-over');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileSelect(files[0]);
+                }
+            });
+
+            imageInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFileSelect(e.target.files[0]);
+                }
+            });
+        }
+
+        function handleFileSelect(file) {
+            if (!file.type.match('image.*')) {
+                alert('Por favor selecciona una imagen válida');
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                alert('El archivo es demasiado grande. Máximo 10MB');
+                return;
+            }
+
+            selectedFile = file;
+
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const previewContainer = document.getElementById('previewContainer');
+                previewContainer.innerHTML = `
+                    <img src="${e.target.result}" class="preview-image" alt="Preview">
+                    <div class="remove-preview" onclick="removePreview()">
+                        <i class="bi bi-x"></i>
+                    </div>
+                `;
+                previewContainer.style.display = 'inline-block';
+                document.getElementById('uploadZone').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removePreview() {
+            selectedFile = null;
+            document.getElementById('previewContainer').style.display = 'none';
+            document.getElementById('previewContainer').innerHTML = '';
+            document.getElementById('uploadZone').style.display = 'block';
+            document.getElementById('imageInput').value = '';
+        }
+
+        // Form Submit
+        function setupFormSubmit() {
+            document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                if (!selectedFile) {
+                    showMessage('Por favor selecciona una imagen', 'danger');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('image', selectedFile);
+                formData.append('category', document.getElementById('category').value);
+                formData.append('type', document.getElementById('type').value);
+                formData.append('description', document.getElementById('description').value);
+
+                // Technical data
+                const technicalData = {
+                    manufacturer: document.getElementById('manufacturer').value,
+                    model: document.getElementById('model').value,
+                    wingspan: document.getElementById('wingspan').value || null,
+                    length: document.getElementById('length').value || null,
+                    maxSpeed: document.getElementById('maxSpeed').value || null,
+                    cruiseAltitude: document.getElementById('cruiseAltitude').value || null
+                };
+                if (Object.values(technicalData).some(v => v)) {
+                    formData.append('technicalData', JSON.stringify(technicalData));
+                }
+
+                // Visual features
+                const visualFeatures = {
+                    shape: document.getElementById('shape').value,
+                    colors: document.getElementById('colors').value.split(',').map(c => c.trim()).filter(c => c),
+                    lightPattern: document.getElementById('lightPattern').value,
+                    commonAltitude: document.getElementById('commonAltitude').value
+                };
+                if (Object.values(visualFeatures).some(v => v && (Array.isArray(v) ? v.length > 0 : true))) {
+                    formData.append('visualFeatures', JSON.stringify(visualFeatures));
+                }
+
+                // Tags
+                const tags = document.getElementById('tags').value.split(',').map(t => t.trim()).filter(t => t);
+                if (tags.length > 0) {
+                    formData.append('tags', JSON.stringify(tags));
+                }
+
+                // Notes
+                const notes = document.getElementById('notes').value;
+                if (notes) {
+                    formData.append('notes', notes);
+                }
+
+                try {
+                    showLoading(true);
+                    const token = localStorage.getItem('token');
+                    
+                    const response = await fetch(`${API_URL}/training`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Error subiendo imagen');
+                    }
+
+                    showMessage('✅ Imagen de entrenamiento subida exitosamente', 'success');
+                    resetForm();
+                    loadStatistics();
+                    loadTrainingImages();
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    showMessage('❌ Error: ' + error.message, 'danger');
+                } finally {
+                    showLoading(false);
+                }
+            });
+        }
+
+        // Load Training Images
+        async function loadTrainingImages(page = 1) {
+            try {
+                showLoading(true);
+                const token = localStorage.getItem('token');
+                const filterCategory = document.getElementById('filterCategory').value;
+                
+                let url = `${API_URL}/training?page=${page}&limit=10`;
+                if (filterCategory) {
+                    url += `&category=${filterCategory}`;
+                }
+
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Error loading images');
+
+                const data = await response.json();
+                renderTrainingImages(data.images);
+                renderPagination(data.pagination);
+                currentPage = page;
+
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('Error cargando imágenes: ' + error.message, 'danger');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function renderTrainingImages(images) {
+            const tbody = document.getElementById('trainingTableBody');
+            
+            if (images.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No hay imágenes de entrenamiento</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = images.map(img => `
+                <tr>
+                    <td>
+                        <img src="${API_URL.replace('/api', '')}/uploads/training/${img.imageUrl}" 
+                             alt="${img.type}" 
+                             onerror="this.src='https://via.placeholder.com/80x80?text=No+Image'">
+                    </td>
+                    <td><strong>${img.type}</strong></td>
+                    <td>${getCategoryBadge(img.category)}</td>
+                    <td>${img.uploadedBy?.username || 'N/A'}</td>
+                    <td>${new Date(img.createdAt).toLocaleDateString('es-ES')}</td>
+                    <td><span class="badge bg-info">${img.usageStats?.matchCount || 0}</span></td>
+                    <td><span class="badge bg-success">${img.usageStats?.accuracy || 0}%</span></td>
+                    <td>
+                        <span class="badge ${img.isActive ? 'badge-active' : 'badge-inactive'}">
+                            ${img.isActive ? 'Activa' : 'Inactiva'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-sm btn-primary" onclick="editImage('${img._id}')">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteImage('${img._id}', '${img.type}')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function getCategoryBadge(category) {
+            const badges = {
+                'aircraft_commercial': '<span class="category-badge" style="background: #667eea; color: white;">🛫 Avión Comercial</span>',
+                'aircraft_military': '<span class="category-badge" style="background: #dc3545; color: white;">✈️ Avión Militar</span>',
+                'aircraft_private': '<span class="category-badge" style="background: #6c757d; color: white;">🛩️ Avión Privado</span>',
+                'drone': '<span class="category-badge" style="background: #28a745; color: white;">🚁 Dron</span>',
+                'helicopter': '<span class="category-badge" style="background: #17a2b8; color: white;">🚁 Helicóptero</span>',
+                'balloon': '<span class="category-badge" style="background: #fd7e14; color: white;">🎈 Globo</span>',
+                'satellite': '<span class="category-badge" style="background: #6610f2; color: white;">🛰️ Satélite</span>',
+                'bird': '<span class="category-badge" style="background: #20c997; color: white;">🦅 Ave</span>',
+                'celestial': '<span class="category-badge" style="background: #e83e8c; color: white;">🌙 Celestial</span>',
+                'atmospheric': '<span class="category-badge" style="background: #007bff; color: white;">☁️ Atmosférico</span>',
+                'other': '<span class="category-badge" style="background: #6c757d; color: white;">❓ Otro</span>'
+            };
+            return badges[category] || badges['other'];
+        }
+
+        function renderPagination(pagination) {
+            const paginationEl = document.getElementById('pagination');
+            const { page, totalPages } = pagination;
+
+            let html = '';
+
+            // Previous
+            html += `<li class="page-item ${page === 1 ? 'disabled' : ''}">
+                        <a class="page-link" href="#" onclick="loadTrainingImages(${page - 1}); return false;">Anterior</a>
+                     </li>`;
+
+            // Pages
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= page - 2 && i <= page + 2)) {
+                    html += `<li class="page-item ${i === page ? 'active' : ''}">
+                                <a class="page-link" href="#" onclick="loadTrainingImages(${i}); return false;">${i}</a>
+                             </li>`;
+                } else if (i === page - 3 || i === page + 3) {
+                    html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+            }
+
+            // Next
+            html += `<li class="page-item ${page === totalPages ? 'disabled' : ''}">
+                        <a class="page-link" href="#" onclick="loadTrainingImages(${page + 1}); return false;">Siguiente</a>
+                     </li>`;
+
+            paginationEl.innerHTML = html;
+        }
+
+        // Edit Image
+        async function editImage(id) {
+            try {
+                showLoading(true);
+                const token = localStorage.getItem('token');
+                
+                const response = await fetch(`${API_URL}/training/${id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Error loading image');
+
+                const image = await response.json();
+
+                document.getElementById('editImageId').value = image._id;
+                document.getElementById('editCategory').value = image.category;
+                document.getElementById('editType').value = image.type;
+                document.getElementById('editDescription').value = image.description;
+                document.getElementById('editTags').value = image.tags?.join(', ') || '';
+                document.getElementById('editIsActive').checked = image.isActive;
+                document.getElementById('editNotes').value = image.notes || '';
+
+                editModal.show();
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error cargando imagen: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function saveEdit() {
+            const id = document.getElementById('editImageId').value;
+            const updateData = {
+                category: document.getElementById('editCategory').value,
+                type: document.getElementById('editType').value,
+                description: document.getElementById('editDescription').value,
+                tags: document.getElementById('editTags').value.split(',').map(t => t.trim()).filter(t => t),
+                isActive: document.getElementById('editIsActive').checked,
+                notes: document.getElementById('editNotes').value
+            };
+
+            try {
+                showLoading(true);
+                const token = localStorage.getItem('token');
+                
+                const response = await fetch(`${API_URL}/training/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                });
+
+                if (!response.ok) throw new Error('Error updating image');
+
+                editModal.hide();
+                showMessage('✅ Imagen actualizada exitosamente', 'success');
+                loadTrainingImages(currentPage);
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error actualizando imagen: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Delete Image
+        async function deleteImage(id, name) {
+            if (!confirm(`¿Eliminar "${name}"?\n\nEsta acción no se puede deshacer.`)) {
+                return;
+            }
+
+            try {
+                showLoading(true);
+                const token = localStorage.getItem('token');
+                
+                const response = await fetch(`${API_URL}/training/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Error deleting image');
+
+                showMessage('✅ Imagen eliminada exitosamente', 'success');
+                loadStatistics();
+                loadTrainingImages(currentPage);
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error eliminando imagen: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Utilities
+        function populateFilterCategories() {
+            const select = document.getElementById('filterCategory');
+            const categories = [
+                { value: 'aircraft_commercial', label: '🛫 Avión Comercial' },
+                { value: 'aircraft_military', label: '✈️ Avión Militar' },
+                { value: 'aircraft_private', label: '🛩️ Avión Privado' },
+                { value: 'drone', label: '🚁 Dron' },
+                { value: 'helicopter', label: '🚁 Helicóptero' },
+                { value: 'balloon', label: '🎈 Globo' },
+                { value: 'satellite', label: '🛰️ Satélite' },
+                { value: 'bird', label: '🦅 Ave' },
+                { value: 'celestial', label: '🌙 Celestial' },
+                { value: 'atmospheric', label: '☁️ Atmosférico' },
+                { value: 'other', label: '❓ Otro' }
+            ];
+
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.value;
+                option.textContent = cat.label;
+                select.appendChild(option);
+            });
+
+            select.addEventListener('change', () => loadTrainingImages(1));
+        }
+
+        function resetForm() {
+            document.getElementById('uploadForm').reset();
+            removePreview();
+        }
+
+        function showMessage(message, type) {
+            const msgDiv = document.getElementById('uploadMessage');
+            msgDiv.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+            
+            setTimeout(() => {
+                msgDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        function showLoading(show) {
+            const overlay = document.getElementById('loadingOverlay');
+            if (show) {
+                overlay.classList.add('active');
+            } else {
+                overlay.classList.remove('active');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('username');
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Imágenes - UAP Analysis</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .image-card {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+        }
+        .image-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        .image-card .info {
+            padding: 10px;
+            font-size: 12px;
+            background: #f9f9f9;
+        }
+        .error {
+            color: red;
+            padding: 10px;
+            background: #ffe6e6;
+            border-radius: 4px;
+        }
+        .success {
+            color: green;
+            padding: 10px;
+            background: #e6ffe6;
+            border-radius: 4px;
+        }
+        .url-test {
+            font-family: monospace;
+            font-size: 11px;
+            color: #666;
+            margin-top: 5px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test de Visualización de Imágenes</h1>
+    
+    <div class="test-section">
+        <h2>1. Test de Imágenes Directas (desde servidor)</h2>
+        <div id="directTest"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test de Objetos de Biblioteca (API)</h2>
+        <div id="libraryTest"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test de Imágenes de Training (API)</h2>
+        <div id="trainingTest"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000';
+
+        // Test 1: Imágenes directas
+        async function testDirectImages() {
+            const container = document.getElementById('directTest');
+            
+            // Imágenes conocidas del directorio
+            const testImages = [
+                '/uploads/library/thumb-library-1762729151982-727373310.jpeg',
+                '/uploads/library/thumb-library-1762729040190-292692218.jpeg',
+                '/uploads/library/thumb-library-1762726523419-190728894.jpeg'
+            ];
+
+            let html = '<div class="image-grid">';
+            testImages.forEach((imgPath, index) => {
+                const fullUrl = `${API_URL}${imgPath}`;
+                html += `
+                    <div class="image-card">
+                        <img src="${fullUrl}" 
+                             alt="Test ${index + 1}"
+                             onclick="window.open('${fullUrl}', '_blank')"
+                             onerror="this.parentElement.innerHTML='<div class=\\'error\\'>❌ Error cargando</div>'">
+                        <div class="info">
+                            <strong>Imagen ${index + 1}</strong>
+                            <div class="url-test">${fullUrl}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // Test 2: Objetos de biblioteca
+        async function testLibraryObjects() {
+            const container = document.getElementById('libraryTest');
+            
+            try {
+                const response = await fetch(`${API_URL}/api/library/objects?isManualEntry=true&limit=10`);
+                const data = await response.json();
+
+                if (data.data && data.data.length > 0) {
+                    let html = `<div class="success">✅ Se encontraron ${data.data.length} objetos</div>`;
+                    html += '<div class="image-grid">';
+                    
+                    data.data.forEach(obj => {
+                        if (obj.manualImages && obj.manualImages.length > 0) {
+                            obj.manualImages.forEach((img, imgIndex) => {
+                                const imgUrl = img.thumbnailUrl || img.url;
+                                const fullUrl = imgUrl.startsWith('http') ? imgUrl : `${API_URL}${imgUrl}`;
+                                
+                                html += `
+                                    <div class="image-card">
+                                        <img src="${fullUrl}" 
+                                             alt="${obj.name}"
+                                             onclick="window.open('${fullUrl}', '_blank')"
+                                             onerror="this.parentElement.innerHTML='<div class=\\'error\\'>❌ Error: ${imgUrl}</div>'">
+                                        <div class="info">
+                                            <strong>${obj.name}</strong>
+                                            <br>Imagen ${imgIndex + 1} de ${obj.manualImages.length}
+                                            <div class="url-test">${fullUrl}</div>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                        }
+                    });
+                    html += '</div>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<div class="error">❌ No se encontraron objetos con imágenes</div>';
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        // Test 3: Training
+        async function testTrainingImages() {
+            const container = document.getElementById('trainingTest');
+            
+            try {
+                const response = await fetch(`${API_URL}/api/training?limit=10`);
+                const data = await response.json();
+
+                if (data.images && data.images.length > 0) {
+                    let html = `<div class="success">✅ Se encontraron ${data.images.length} imágenes de training</div>`;
+                    html += '<div class="image-grid">';
+                    
+                    data.images.forEach(img => {
+                        let imgUrl = img.thumbnailUrl || img.imageUrl || img.fullImageUrl;
+                        
+                        if (imgUrl) {
+                            const fullUrl = imgUrl.startsWith('http') ? imgUrl : `${API_URL}${imgUrl}`;
+                            
+                            html += `
+                                <div class="image-card">
+                                    <img src="${fullUrl}" 
+                                         alt="${img.type || 'Training'}"
+                                         onclick="window.open('${fullUrl}', '_blank')"
+                                         onerror="this.parentElement.innerHTML='<div class=\\'error\\'>❌ Error: ${imgUrl}</div>'">
+                                    <div class="info">
+                                        <strong>${img.type || 'Sin tipo'}</strong>
+                                        <br>${img.category || 'Sin categoría'}
+                                        <div class="url-test">${fullUrl}</div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+                    html += '</div>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<div class="error">❌ No hay imágenes de training</div>';
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        // Ejecutar tests
+        window.addEventListener('DOMContentLoaded', () => {
+            testDirectImages();
+            testLibraryObjects();
+            testTrainingImages();
+        });
+    </script>
+</body>
+</html>

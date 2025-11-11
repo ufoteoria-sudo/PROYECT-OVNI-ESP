@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis Avanzado - UAP Analysis System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --dark-gradient: linear-gradient(135deg, #434343 0%, #000000 100%);
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: var(--primary-gradient);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            padding: 15px 0;
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            background: white;
+            margin-bottom: 25px;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+
+        .stat-box {
+            text-align: center;
+            padding: 25px;
+            border-radius: 15px;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .stat-box h3 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-box p {
+            margin: 0;
+            opacity: 0.9;
+        }
+
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .bg-gradient-success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .bg-gradient-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .bg-gradient-info {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #333 !important;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            padding: 20px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 10px;
+            padding: 10px 25px;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .filter-section {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+
+        .insight-card {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe4cc 100%);
+            border-left: 5px solid #ff9800;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .insight-card h6 {
+            color: #e65100;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .loading .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+
+        .comparison-table {
+            font-size: 0.9rem;
+        }
+
+        .comparison-table td {
+            padding: 10px;
+        }
+
+        .badge-custom {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="dashboard.html">
+                <i class="bi bi-disc"></i> UAP Analysis System
+            </a>
+            <div class="d-flex align-items-center gap-3">
+                <a href="notifications.html" class="position-relative text-white text-decoration-none" title="Notificaciones">
+                    <i class="bi bi-bell-fill" style="font-size: 1.5rem;"></i>
+                    <span id="notificationBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">
+                        0
+                    </span>
+                </a>
+                <span class="text-white">
+                    <i class="bi bi-person-circle"></i>
+                    <span id="userName">Usuario</span>
+                </span>
+                <button class="btn btn-outline-light btn-sm" onclick="logout()">
+                    <i class="bi bi-box-arrow-right"></i> Salir
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="mb-3">
+                    <i class="bi bi-graph-up"></i> Análisis Avanzado de Avistamientos UAP
+                </h2>
+                <p class="text-muted">
+                    Visualización de patrones, tendencias y estadísticas de tus análisis
+                </p>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filter-section">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label"><strong>Período de análisis</strong></label>
+                    <select class="form-select" id="filterDays" onchange="loadAllData()">
+                        <option value="7">Últimos 7 días</option>
+                        <option value="30" selected>Últimos 30 días</option>
+                        <option value="90">Últimos 90 días</option>
+                        <option value="180">Últimos 6 meses</option>
+                        <option value="365">Último año</option>
+                        <option value="all">Todo el tiempo</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label"><strong>Mínimo de ocurrencias</strong></label>
+                    <input type="number" class="form-control" id="filterMinOccurrences" value="2" min="1" max="10">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label"><strong>Radio GPS (km)</strong></label>
+                    <input type="number" class="form-control" id="filterRadiusKm" value="10" min="1" max="100">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" onclick="loadAllData()">
+                        <i class="bi bi-funnel"></i> Aplicar Filtros
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas Generales -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-box bg-gradient-primary">
+                    <h3 id="statTotal">0</h3>
+                    <p><i class="bi bi-file-earmark-check"></i> Total Análisis</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-box bg-gradient-success">
+                    <h3 id="statUAP">0</h3>
+                    <p><i class="bi bi-question-circle"></i> UAP Detectados</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-box bg-gradient-warning">
+                    <h3 id="statAvgConfidence">0%</h3>
+                    <p><i class="bi bi-speedometer2"></i> Confianza Promedio</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-box bg-gradient-info">
+                    <h3 id="statPatterns">0</h3>
+                    <p><i class="bi bi-diagram-3"></i> Patrones Detectados</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insights Automáticos -->
+        <div class="row mb-4" id="insightsContainer" style="display: none;">
+            <div class="col-12">
+                <h5 class="mb-3"><i class="bi bi-lightbulb-fill text-warning"></i> Insights Automáticos</h5>
+                <div id="insightsList"></div>
+            </div>
+        </div>
+
+        <!-- Gráficos Row 1 -->
+        <div class="row mb-4">
+            <!-- Gráfico de categorías -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="section-title">
+                            <i class="bi bi-pie-chart-fill"></i> Distribución por Categoría
+                        </h5>
+                        <div class="chart-container">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline de análisis -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="section-title">
+                            <i class="bi bi-calendar3"></i> Timeline de Análisis
+                        </h5>
+                        <div class="chart-container">
+                            <canvas id="timelineChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficos Row 2 -->
+        <div class="row mb-4">
+            <!-- Distribución de confianza -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="section-title">
+                            <i class="bi bi-bar-chart-fill"></i> Distribución de Confianza
+                        </h5>
+                        <div class="chart-container">
+                            <canvas id="confidenceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actividad por hora -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="section-title">
+                            <i class="bi bi-clock-fill"></i> Actividad por Hora del Día
+                        </h5>
+                        <div class="chart-container">
+                            <canvas id="hourChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Patrones Detectados -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="section-title">
+                            <i class="bi bi-diagram-3-fill"></i> Patrones Detectados
+                        </h5>
+                        <div id="patternsContainer">
+                            <div class="loading">
+                                <div class="spinner-border text-primary"></div>
+                                <p class="mt-3">Cargando patrones...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comparador de Análisis -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="section-title">
+                            <i class="bi bi-arrow-left-right"></i> Comparador de Análisis
+                        </h5>
+                        <p class="text-muted">Selecciona hasta 5 análisis para comparar</p>
+                        
+                        <div class="mb-3">
+                            <div id="analysisSelector">
+                                <div class="loading">
+                                    <div class="spinner-border text-primary"></div>
+                                    <p class="mt-3">Cargando análisis disponibles...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary" onclick="compareSelected()" id="compareBtn" disabled>
+                            <i class="bi bi-arrow-left-right"></i> Comparar Seleccionados
+                        </button>
+
+                        <div id="comparisonResults" style="display: none;" class="mt-4">
+                            <h6 class="mb-3"><i class="bi bi-check-circle"></i> Resultados de la Comparación</h6>
+                            <div id="comparisonContent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mapa de Calor (próximamente) -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-map" style="font-size: 4rem; color: #ccc;"></i>
+                        <h5 class="mt-3 text-muted">Mapa de Calor Geográfico</h5>
+                        <p class="text-muted">Próximamente: Visualización de avistamientos en mapa interactivo</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000';
+        let allAnalyses = [];
+        let selectedForComparison = [];
+
+        // Charts
+        let categoryChart, timelineChart, confidenceChart, hourChart;
+
+        // Verificar autenticación
+        async function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return false;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Token inválido');
+
+                const user = await response.json();
+                document.getElementById('userName').textContent = user.username;
+                return true;
+            } catch (error) {
+                localStorage.removeItem('token');
+                window.location.href = 'login.html';
+                return false;
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+        }
+
+        // Cargar contador de notificaciones
+        async function loadNotificationCount() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            try {
+                const response = await fetch(`${API_URL}/api/notifications/unread/count`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const badge = document.getElementById('notificationBadge');
+                    
+                    if (data.count > 0) {
+                        badge.textContent = data.count > 99 ? '99+' : data.count;
+                        badge.style.display = 'inline-block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Error al cargar notificaciones:', error);
+            }
+        }
+
+        // Cargar todos los datos
+        async function loadAllData() {
+            const token = localStorage.getItem('token');
+            const days = document.getElementById('filterDays').value;
+            const daysParam = days === 'all' ? 365 * 10 : days; // 10 años si es "all"
+
+            try {
+                // Cargar estadísticas
+                const statsResponse = await fetch(`${API_URL}/api/advanced/stats?days=${daysParam}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const statsData = await statsResponse.json();
+
+                // Cargar patrones
+                const minOccurrences = document.getElementById('filterMinOccurrences').value;
+                const radiusKm = document.getElementById('filterRadiusKm').value;
+                
+                const patternsResponse = await fetch(
+                    `${API_URL}/api/advanced/patterns?days=${daysParam}&minOccurrences=${minOccurrences}&radiusKm=${radiusKm}`, 
+                    { headers: { 'Authorization': `Bearer ${token}` } }
+                );
+                const patternsData = await patternsResponse.json();
+
+                // Cargar análisis para comparador
+                const analysesResponse = await fetch(`${API_URL}/api/uploads`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const analysesData = await analysesResponse.json();
+                allAnalyses = analysesData.analyses.filter(a => a.status === 'completed');
+
+                // Actualizar UI
+                updateStats(statsData);
+                updateCharts(statsData);
+                updatePatterns(patternsData);
+                updateInsights(patternsData);
+                updateAnalysisSelector();
+
+            } catch (error) {
+                console.error('Error al cargar datos:', error);
+                alert('Error al cargar los datos de análisis avanzado');
+            }
+        }
+
+        // Actualizar estadísticas
+        function updateStats(data) {
+            document.getElementById('statTotal').textContent = data.totalAnalyses || 0;
+            document.getElementById('statUAP').textContent = data.uapCount || 0;
+            document.getElementById('statAvgConfidence').textContent = 
+                Math.round(data.averageConfidence || 0) + '%';
+        }
+
+        // Actualizar gráficos
+        function updateCharts(data) {
+            // Gráfico de categorías (Pie)
+            const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+            if (categoryChart) categoryChart.destroy();
+            
+            const categoryLabels = data.topCategories?.map(c => 
+                c._id.charAt(0).toUpperCase() + c._id.slice(1)) || [];
+            const categoryValues = data.topCategories?.map(c => c.count) || [];
+            
+            categoryChart = new Chart(categoryCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: categoryLabels,
+                    datasets: [{
+                        data: categoryValues,
+                        backgroundColor: [
+                            '#667eea', '#764ba2', '#f093fb', '#4facfe',
+                            '#00f2fe', '#43e97b', '#38f9d7', '#fa709a'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 15, font: { size: 12 } }
+                        }
+                    }
+                }
+            });
+
+            // Timeline (Line)
+            const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+            if (timelineChart) timelineChart.destroy();
+            
+            const timelineLabels = data.timeline?.map(t => 
+                new Date(t._id).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })
+            ) || [];
+            const timelineValues = data.timeline?.map(t => t.count) || [];
+            
+            timelineChart = new Chart(timelineCtx, {
+                type: 'line',
+                data: {
+                    labels: timelineLabels,
+                    datasets: [{
+                        label: 'Análisis por día',
+                        data: timelineValues,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#667eea'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+            });
+
+            // Distribución de confianza (Bar)
+            const confidenceCtx = document.getElementById('confidenceChart').getContext('2d');
+            if (confidenceChart) confidenceChart.destroy();
+            
+            const confidenceLabels = data.confidenceDistribution?.map(c => 
+                `${c._id.min}-${c._id.max}%`) || [];
+            const confidenceValues = data.confidenceDistribution?.map(c => c.count) || [];
+            
+            confidenceChart = new Chart(confidenceCtx, {
+                type: 'bar',
+                data: {
+                    labels: confidenceLabels,
+                    datasets: [{
+                        label: 'Número de análisis',
+                        data: confidenceValues,
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+            });
+
+            // Actividad por hora (Radar)
+            const hourCtx = document.getElementById('hourChart').getContext('2d');
+            if (hourChart) hourChart.destroy();
+            
+            // Crear array de 24 horas con 0
+            const hourData = Array(24).fill(0);
+            data.hourlyDistribution?.forEach(h => {
+                hourData[h._id] = h.count;
+            });
+            
+            hourChart = new Chart(hourCtx, {
+                type: 'radar',
+                data: {
+                    labels: Array.from({length: 24}, (_, i) => i + ':00'),
+                    datasets: [{
+                        label: 'Análisis por hora',
+                        data: hourData,
+                        borderColor: '#f093fb',
+                        backgroundColor: 'rgba(240, 147, 251, 0.2)',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#f093fb',
+                        pointRadius: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Actualizar patrones
+        function updatePatterns(data) {
+            const container = document.getElementById('patternsContainer');
+            
+            if (!data.patterns || Object.keys(data.patterns).length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 
+                        No se detectaron patrones significativos en este período. 
+                        Intenta ajustar los filtros o esperar más análisis.
+                    </div>
+                `;
+                document.getElementById('statPatterns').textContent = '0';
+                return;
+            }
+
+            let totalPatterns = 0;
+            let html = '<div class="row">';
+
+            // Patrones por categoría
+            if (data.patterns.byCategory?.length > 0) {
+                totalPatterns += data.patterns.byCategory.length;
+                html += `
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-primary">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="bi bi-tags-fill text-primary"></i> Patrones por Categoría
+                                </h6>
+                                <ul class="list-unstyled mb-0">
+                `;
+                data.patterns.byCategory.forEach(p => {
+                    html += `
+                        <li class="mb-2">
+                            <span class="badge-custom bg-primary">${p.category}</span>
+                            <strong>${p.count}</strong> ocurrencias
+                        </li>
+                    `;
+                });
+                html += '</ul></div></div></div>';
+            }
+
+            // Patrones por ubicación
+            if (data.patterns.byLocation?.length > 0) {
+                totalPatterns += data.patterns.byLocation.length;
+                html += `
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-success">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="bi bi-geo-alt-fill text-success"></i> Patrones Geográficos
+                                </h6>
+                                <ul class="list-unstyled mb-0">
+                `;
+                data.patterns.byLocation.forEach(p => {
+                    html += `
+                        <li class="mb-2">
+                            <span class="badge-custom bg-success">📍 ${p.count} avistamientos</span>
+                            cerca de (${p.location.coordinates[1].toFixed(2)}, ${p.location.coordinates[0].toFixed(2)})
+                        </li>
+                    `;
+                });
+                html += '</ul></div></div></div>';
+            }
+
+            // Patrones temporales
+            if (data.patterns.byTimeOfDay?.length > 0) {
+                totalPatterns += data.patterns.byTimeOfDay.length;
+                html += `
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-warning">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="bi bi-clock-fill text-warning"></i> Patrones Temporales
+                                </h6>
+                                <ul class="list-unstyled mb-0">
+                `;
+                data.patterns.byTimeOfDay.forEach(p => {
+                    html += `
+                        <li class="mb-2">
+                            <span class="badge-custom bg-warning text-dark">${p.hourRange}:00</span>
+                            <strong>${p.count}</strong> avistamientos
+                        </li>
+                    `;
+                });
+                html += '</ul></div></div></div>';
+            }
+
+            // Objetos más identificados
+            if (data.patterns.topObjects?.length > 0) {
+                totalPatterns += data.patterns.topObjects.length;
+                html += `
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-info">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="bi bi-star-fill text-info"></i> Objetos Más Identificados
+                                </h6>
+                                <ul class="list-unstyled mb-0">
+                `;
+                data.patterns.topObjects.forEach(p => {
+                    html += `
+                        <li class="mb-2">
+                            <span class="badge-custom bg-info">${p.object}</span>
+                            <strong>${p.count}</strong> veces
+                        </li>
+                    `;
+                });
+                html += '</ul></div></div></div>';
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
+            document.getElementById('statPatterns').textContent = totalPatterns;
+        }
+
+        // Actualizar insights
+        function updateInsights(data) {
+            const container = document.getElementById('insightsList');
+            const insightsContainer = document.getElementById('insightsContainer');
+
+            if (!data.insights || data.insights.length === 0) {
+                insightsContainer.style.display = 'none';
+                return;
+            }
+
+            insightsContainer.style.display = 'block';
+            let html = '';
+
+            data.insights.forEach(insight => {
+                html += `
+                    <div class="insight-card">
+                        <h6><i class="bi bi-lightbulb-fill"></i> ${insight.title}</h6>
+                        <p class="mb-0">${insight.description}</p>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Actualizar selector de análisis para comparación
+        function updateAnalysisSelector() {
+            const container = document.getElementById('analysisSelector');
+            
+            if (allAnalyses.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        No hay análisis completados disponibles para comparar.
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="row g-2">';
+            
+            allAnalyses.slice(0, 20).forEach(analysis => { // Máximo 20 para no saturar
+                const checked = selectedForComparison.includes(analysis._id) ? 'checked' : '';
+                const category = analysis.aiAnalysis?.category || analysis.bestMatch?.category || 'unknown';
+                const confidence = Math.round(analysis.aiAnalysis?.confidence || analysis.bestMatch?.matchPercentage || 0);
+                
+                html += `
+                    <div class="col-md-4">
+                        <div class="form-check card p-3" style="cursor: pointer;">
+                            <input 
+                                class="form-check-input" 
+                                type="checkbox" 
+                                value="${analysis._id}" 
+                                id="check_${analysis._id}"
+                                onchange="toggleSelection('${analysis._id}')"
+                                ${checked}
+                                ${selectedForComparison.length >= 5 && !checked ? 'disabled' : ''}
+                            >
+                            <label class="form-check-label w-100" for="check_${analysis._id}" style="cursor: pointer;">
+                                <strong>${analysis.fileName}</strong><br>
+                                <small class="text-muted">
+                                    <span class="badge bg-secondary">${category}</span>
+                                    <span class="badge bg-info">${confidence}%</span>
+                                </small>
+                            </label>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // Toggle selección para comparación
+        function toggleSelection(id) {
+            const index = selectedForComparison.indexOf(id);
+            
+            if (index > -1) {
+                selectedForComparison.splice(index, 1);
+            } else {
+                if (selectedForComparison.length < 5) {
+                    selectedForComparison.push(id);
+                }
+            }
+
+            const compareBtn = document.getElementById('compareBtn');
+            compareBtn.disabled = selectedForComparison.length < 2;
+            
+            updateAnalysisSelector();
+        }
+
+        // Comparar análisis seleccionados
+        async function compareSelected() {
+            if (selectedForComparison.length < 2) {
+                alert('Selecciona al menos 2 análisis para comparar');
+                return;
+            }
+
+            const token = localStorage.getItem('token');
+            const resultsContainer = document.getElementById('comparisonResults');
+            const contentContainer = document.getElementById('comparisonContent');
+
+            resultsContainer.style.display = 'block';
+            contentContainer.innerHTML = '<div class="text-center"><div class="spinner-border text-primary"></div></div>';
+
+            try {
+                const response = await fetch(`${API_URL}/api/advanced/compare`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ analysisIds: selectedForComparison })
+                });
+
+                if (!response.ok) throw new Error('Error al comparar análisis');
+
+                const data = await response.json();
+                displayComparisonResults(data);
+
+            } catch (error) {
+                console.error('Error:', error);
+                contentContainer.innerHTML = `
+                    <div class="alert alert-danger">
+                        Error al realizar la comparación: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Mostrar resultados de comparación
+        function displayComparisonResults(data) {
+            const container = document.getElementById('comparisonContent');
+            
+            let html = `
+                <div class="row">
+                    <!-- Similitudes -->
+                    <div class="col-md-6">
+                        <div class="card border-success mb-3">
+                            <div class="card-header bg-success text-white">
+                                <i class="bi bi-check-circle"></i> Similitudes Encontradas
+                            </div>
+                            <div class="card-body">
+            `;
+            
+            if (data.similarities?.commonCategories?.length > 0) {
+                html += '<p><strong>Categorías en común:</strong></p><ul>';
+                data.similarities.commonCategories.forEach(cat => {
+                    html += `<li>${cat}</li>`;
+                });
+                html += '</ul>';
+            }
+            
+            if (data.similarities?.consistentConfidence) {
+                html += `<p><strong>Confianza consistente</strong> entre análisis</p>`;
+            }
+            
+            if (!data.similarities || 
+                (!data.similarities.commonCategories?.length && !data.similarities.consistentConfidence)) {
+                html += '<p class="text-muted">No se encontraron similitudes significativas</p>';
+            }
+            
+            html += `
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Diferencias -->
+                    <div class="col-md-6">
+                        <div class="card border-warning mb-3">
+                            <div class="card-header bg-warning">
+                                <i class="bi bi-exclamation-circle"></i> Diferencias Detectadas
+                            </div>
+                            <div class="card-body">
+            `;
+            
+            if (data.differences?.categoryVariation) {
+                html += '<p><strong>Variación de categorías</strong> entre análisis</p>';
+            }
+            
+            if (data.differences?.confidenceRange) {
+                html += `<p><strong>Rango de confianza:</strong> ${data.differences.confidenceRange.min}% - ${data.differences.confidenceRange.max}%</p>`;
+            }
+            
+            if (!data.differences || 
+                (!data.differences.categoryVariation && !data.differences.confidenceRange)) {
+                html += '<p class="text-muted">Análisis muy similares entre sí</p>';
+            }
+            
+            html += `
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumen -->
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6><i class="bi bi-graph-up"></i> Resumen Estadístico</h6>
+                        <div class="row text-center">
+                            <div class="col-md-4">
+                                <h5 class="text-primary">${data.totalAnalysesCompared}</h5>
+                                <small class="text-muted">Análisis Comparados</small>
+                            </div>
+                            <div class="col-md-4">
+                                <h5 class="text-success">${Math.round(data.averageConfidence || 0)}%</h5>
+                                <small class="text-muted">Confianza Promedio</small>
+                            </div>
+                            <div class="col-md-4">
+                                <h5 class="text-info">${data.uniqueCategories || 0}</h5>
+                                <small class="text-muted">Categorías Únicas</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        // Inicializar
+        async function init() {
+            const authenticated = await checkAuth();
+            if (authenticated) {
+                loadNotificationCount();
+                setInterval(loadNotificationCount, 30000);
+                loadAllData();
+            }
+        }
+
+        init();
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

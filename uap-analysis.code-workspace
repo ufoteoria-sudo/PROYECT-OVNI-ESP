@@ -1,0 +1,26 @@
+{
+  "folders": [
+    {
+      "name": "🛸 UAP Analysis",
+      "path": "."
+    },
+    {
+      "name": "Backend",
+      "path": "./server"
+    },
+    {
+      "name": "Frontend",
+      "path": "./frontend"
+    }
+  ],
+  "settings": {
+    "editor.formatOnSave": true,
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/.env": false
+    },
+    "search.exclude": {
+      "**/node_modules": true
+    }
+  }
+}

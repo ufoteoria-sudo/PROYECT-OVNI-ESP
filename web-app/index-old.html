@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UAP Analysis System v3.0 - Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <!-- Header -->
+            <div class="sidebar-header">
+                <div class="logo-container">
+                    <div class="logo-classified">CLASIFICADO</div>
+                    <h3 class="logo-title">UAP SYSTEM</h3>
+                    <div class="logo-subtitle">v3.0 HÍBRIDO</div>
+                </div>
+            </div>
+
+            <!-- Perfil de Usuario -->
+            <div class="user-profile">
+                <div class="avatar-container">
+                    <img src="https://ui-avatars.com/api/?name=Admin+UAP&size=60&background=667eea&color=fff&bold=true" alt="Avatar" class="user-avatar">
+                </div>
+                <div class="user-info">
+                    <div class="user-name">Admin UAP</div>
+                    <div class="user-email">admin@uap.system</div>
+                    <span class="user-badge">Administrador</span>
+                </div>
+            </div>
+
+            <!-- Navegación -->
+            <nav class="sidebar-nav">
+                <ul class="nav-list">
+                    <li class="nav-item active">
+                        <a href="#dashboard" class="nav-link" data-page="dashboard">
+                            <i class="icon">🏠</i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#perfil" class="nav-link" data-page="perfil">
+                            <i class="icon">👤</i>
+                            <span>Mi Perfil</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#subir-analisis" class="nav-link" data-page="subir-analisis">
+                            <i class="icon">📤</i>
+                            <span>Subir Análisis</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#mis-reportes" class="nav-link" data-page="mis-reportes">
+                            <i class="icon">📋</i>
+                            <span>Mis Reportes</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#biblioteca" class="nav-link" data-page="biblioteca">
+                            <i class="icon">📚</i>
+                            <span>Biblioteca Visual</span>
+                        </a>
+                    </li>
+
+                    <!-- Separador Admin -->
+                    <li class="nav-separator">
+                        <span>ADMINISTRACIÓN</span>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#admin-biblioteca" class="nav-link" data-page="admin-biblioteca">
+                            <i class="icon">⚙️</i>
+                            <span>Gestión Biblioteca</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#admin-training" class="nav-link" data-page="admin-training">
+                            <i class="icon">🎓</i>
+                            <span>Entrada de Datos</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#admin-config" class="nav-link" data-page="admin-config">
+                            <i class="icon">🔧</i>
+                            <span>Configuración</span>
+                        </a>
+                    </li>
+
+                    <!-- Separador Enlaces -->
+                    <li class="nav-separator">
+                        <span>ENLACES</span>
+                    </li>
+                    <li class="nav-item">
+                        <a href="https://ko-fi.com/ufoteoria" target="_blank" class="nav-link">
+                            <i class="icon">💝</i>
+                            <span>Donar</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="https://ufoteoria.com" target="_blank" class="nav-link">
+                            <i class="icon">🌐</i>
+                            <span>Nuestra Web</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- Footer -->
+            <div class="sidebar-footer">
+                <div class="footer-badge">
+                    <span class="badge-icon">🔓</span>
+                    <span class="badge-text">Open Source</span>
+                </div>
+                <div class="footer-text">Proyecto 100% gratuito</div>
+                <div class="footer-level">NIVEL DE ACCESO: PÚBLICO</div>
+            </div>
+        </aside>
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <main class="main-content" id="main-content">
+            <!-- El contenido se carga dinámicamente aquí -->
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/pages.js"></script>
+</body>
+</html>

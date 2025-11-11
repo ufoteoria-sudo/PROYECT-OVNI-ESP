@@ -1,0 +1,24 @@
+{
+  "totalTests": 1,
+  "correctCategory": 1,
+  "incorrectCategory": 0,
+  "partiallyCorrect": 0,
+  "avgConfidence": 15,
+  "avgProcessingTime": 1408,
+  "manipulationDetected": 1,
+  "aiGenerated": 0,
+  "results": [
+    {
+      "testCase": "Imagen UFO generada por IA - debe detectar como no-real",
+      "file": "1762631367069-690f6933ff531e26cd48599a-imagen_ovni_prueba.jpeg",
+      "detectedCategory": "unknown",
+      "confidence": 15,
+      "processingTime": 1408,
+      "isCorrect": true,
+      "isPartial": false,
+      "exifManipulated": true,
+      "aiGenerated": false,
+      "topMatches": []
+    }
+  ]
+}
