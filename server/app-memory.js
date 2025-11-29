@@ -109,6 +109,56 @@ app.get('/api/auth/me', verificarAutenticacion, (req, res) => {
   });
 });
 
+// ==================== BIBLIOTECA VISUAL ====================
+
+let libraryObjects = [
+  { id: 1, category: 'Objetos Celestes', name: 'Venus', description: 'Planeta Venus.', image: 'https://via.placeholder.com/300x200?text=Venus', characteristics: [], confidence: 0.95 },
+  { id: 2, category: 'Satélites Artificiales', name: 'ISS', description: 'Estación Espacial.', image: 'https://via.placeholder.com/300x200?text=ISS', characteristics: [], confidence: 0.99 }
+];
+
+let libraryCategories = [
+  { id: 1, name: 'Objetos Celestes', icon: '⭐' },
+  { id: 2, name: 'Satélites Artificiales', icon: '🛰️' }
+];
+
+let nextLibraryObjectId = 3;
+
+app.get('/api/library/objects', (req, res) => {
+  const category = req.query.category;
+  const objects = category ? libraryObjects.filter(obj => obj.category === category) : libraryObjects;
+  res.json(objects);
+});
+
+app.get('/api/library/categories', (req, res) => {
+  res.json(libraryCategories);
+});
+
+app.post('/api/library/objects', verificarAutenticacion, (req, res) => {
+  if (!req.user.isAdmin) return res.status(403).json({ error: 'Solo admin' });
+  const { category, name, description } = req.body;
+  if (!category || !name) return res.status(400).json({ error: 'Requerido' });
+  const obj = { id: nextLibraryObjectId++, category, name, description, image: req.body.image || '', characteristics: [], confidence: 0.5, createdBy: req.user.email };
+  libraryObjects.push(obj);
+  res.status(201).json(obj);
+});
+
+app.put('/api/library/objects/:id', verificarAutenticacion, (req, res) => {
+  if (!req.user.isAdmin) return res.status(403).json({ error: 'Solo admin' });
+  const obj = libraryObjects.find(o => o.id === parseInt(req.params.id));
+  if (!obj) return res.status(404).json({ error: 'No encontrado' });
+  Object.assign(obj, req.body);
+  res.json(obj);
+});
+
+app.delete('/api/library/objects/:id', verificarAutenticacion, (req, res) => {
+  if (!req.user.isAdmin) return res.status(403).json({ error: 'Solo admin' });
+  const idx = libraryObjects.findIndex(o => o.id === parseInt(req.params.id));
+  if (idx === -1) return res.status(404).json({ error: 'No encontrado' });
+  const deleted = libraryObjects.splice(idx, 1);
+  res.json(deleted[0]);
+});
+
+
 // ==================== RUTAS USUARIOS ====================
 
 app.get('/api/users', (req, res) => {
