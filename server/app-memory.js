@@ -134,7 +134,7 @@ app.get('/api/library/categories', (req, res) => {
 });
 
 app.post('/api/library/objects', verificarAutenticacion, (req, res) => {
-  if (!req.user.isAdmin) return res.status(403).json({ error: 'Solo admin' });
+  if (req.user.role !== 'admin' && !req.user.isAdmin) return res.status(403).json({ error: 'Solo admin' });
   const { category, name, description } = req.body;
   if (!category || !name) return res.status(400).json({ error: 'Requerido' });
   const obj = { id: nextLibraryObjectId++, category, name, description, image: req.body.image || '', characteristics: [], confidence: 0.5, createdBy: req.user.email };
@@ -143,7 +143,7 @@ app.post('/api/library/objects', verificarAutenticacion, (req, res) => {
 });
 
 app.put('/api/library/objects/:id', verificarAutenticacion, (req, res) => {
-  if (!req.user.isAdmin) return res.status(403).json({ error: 'Solo admin' });
+  if (req.user.role !== 'admin' && !req.user.isAdmin) return res.status(403).json({ error: 'Solo admin' });
   const obj = libraryObjects.find(o => o.id === parseInt(req.params.id));
   if (!obj) return res.status(404).json({ error: 'No encontrado' });
   Object.assign(obj, req.body);
@@ -151,7 +151,7 @@ app.put('/api/library/objects/:id', verificarAutenticacion, (req, res) => {
 });
 
 app.delete('/api/library/objects/:id', verificarAutenticacion, (req, res) => {
-  if (!req.user.isAdmin) return res.status(403).json({ error: 'Solo admin' });
+  if (req.user.role !== 'admin' && !req.user.isAdmin) return res.status(403).json({ error: 'Solo admin' });
   const idx = libraryObjects.findIndex(o => o.id === parseInt(req.params.id));
   if (idx === -1) return res.status(404).json({ error: 'No encontrado' });
   const deleted = libraryObjects.splice(idx, 1);

@@ -3062,15 +3062,13 @@
                                     </div>
                                 </div>
 
-                                <!-- Imágenes -->
+                                <!-- Imagen de Referencia -->
                                 <div class="mb-3">
-                                    <label class="form-label">Imágenes de Referencia (máx 5)</label>
-                                    <input type="file" class="form-control" id="libraryImages" accept="image/*" multiple>
-                                    <div class="form-text">JPG, PNG o WEBP. Máx. 10MB por imagen</div>
+                                    <label class="form-label">URL de Imagen (opcional)</label>
+                                    <input type="url" class="form-control" id="libraryImage" 
+                                           placeholder="https://ejemplo.com/imagen.jpg">
+                                    <div class="form-text">URL pública o data URL de imagen. Si no proporciona URL, se usará un degradado de color.</div>
                                 </div>
-
-                                <!-- Preview de imágenes -->
-                                <div id="libraryImagesPreview" class="row mb-3" style="display: none;"></div>
 
                                 <div id="libraryFormMsg" class="mb-3"></div>
 
@@ -3711,7 +3709,7 @@
                 loadTrainingImages();
                 loadTrainingStats();
             } else if (section === 'libraryAdmin' && currentUser?.role === 'admin') {
-                loadLibraryObjectsSimple();
+                loadLibraryObjects();
             }
 
             // Actualizar nav activo
@@ -6766,25 +6764,42 @@ function generateForensicSection(forensic) {
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creando...';
 
-                const category = document.getElementById('libraryCategory').value;
+                // Preparar datos JSON
                 const name = document.getElementById('libraryName').value;
+                const category = document.getElementById('libraryCategory').value;
                 const description = document.getElementById('libraryDescription').value;
                 
-                if (!category || !name || !description) {
-                    throw new Error('Campos requeridos: Categoría, Nombre y Descripción');
-                }
+                // Keywords
+                const keywordsInput = document.getElementById('libraryKeywords').value;
+                const keywords = keywordsInput.split(',').map(k => k.trim()).filter(k => k.length > 0);
 
-                const libObject = {
-                    category,
+                // Visual patterns
+                const patternsInput = document.getElementById('libraryVisualPatterns').value;
+                const patterns = patternsInput.split(',').map(p => p.trim()).filter(p => p.length > 0);
+
+                // Características
+                const characteristics = {
+                    shape: document.getElementById('libraryShape').value || null,
+                    size: document.getElementById('librarySize').value || null,
+                    speed: document.getElementById('librarySpeed').value || null,
+                    luminosity: document.getElementById('libraryLuminosity').value || null,
+                    color: (document.getElementById('libraryColors').value || '').split(',').map(c => c.trim()).filter(c => c),
+                    behavior: document.getElementById('libraryBehavior').value || null
+                };
+
+                // Imagen URL (opcional)
+                const imageUrl = document.getElementById('libraryImage').value || null;
+
+                // Crear objeto para enviar
+                const payload = {
                     name,
+                    category,
                     description,
-                    image: document.getElementById('libraryImage')?.value || 'https://via.placeholder.com/300x200?text=' + encodeURIComponent(name),
-                    characteristics: [
-                        document.getElementById('libraryShape')?.value,
-                        document.getElementById('librarySize')?.value,
-                        document.getElementById('librarySpeed')?.value,
-                        document.getElementById('libraryLuminosity')?.value
-                    ].filter(c => c)
+                    keywords,
+                    patterns,
+                    characteristics,
+                    image: imageUrl,
+                    typology: document.getElementById('libraryTypology').value || null
                 };
 
                 const response = await fetch(`${API_URL}/api/library/objects`, {
@@ -6793,24 +6808,36 @@ function generateForensicSection(forensic) {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(libObject)
+                    body: JSON.stringify(payload)
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
                     msgDiv.innerHTML = `<div class="alert alert-success">
-                        <i class="bi bi-check-circle"></i> ✅ Objeto creado: ${data.name}
+                        <i class="bi bi-check-circle"></i> ${data.message || 'Objeto creado exitosamente'}
+                        <br><small>Sincronizado automáticamente con sistema de análisis</small>
                     </div>`;
+                    
+                    // Limpiar formulario
                     document.getElementById('libraryObjectForm').reset();
-                    setTimeout(() => { msgDiv.innerHTML = ''; }, 3000);
+                    
+                    // Recargar lista
+                    loadLibraryObjects();
+
+                    // Limpiar mensaje después de 5s
+                    setTimeout(() => {
+                        msgDiv.innerHTML = '';
+                    }, 5000);
                 } else {
-                    throw new Error(data.error || 'Error al crear');
+                    msgDiv.innerHTML = `<div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i> ${data.error || 'Error al crear objeto'}
+                    </div>`;
                 }
             } catch (error) {
-                const msgDiv = document.getElementById('libraryFormMsg');
+                console.error('Error:', error);
                 msgDiv.innerHTML = `<div class="alert alert-danger">
-                    <i class="bi bi-x-circle"></i> Error: ${error.message}
+                    <i class="bi bi-x-circle"></i> Error de conexión: ${error.message}
                 </div>`;
             } finally {
                 submitBtn.disabled = false;
@@ -6853,75 +6880,6 @@ function generateForensicSection(forensic) {
         };
 
         // Cargar TODOS los objetos de biblioteca con paginación y filtros
-        // Cargar lista simple de objetos biblioteca
-        async function loadLibraryObjectsSimple() {
-            try {
-                const response = await fetch(`${API_URL}/api/library/objects`);
-                const objects = await response.json();
-                
-                const container = document.getElementById('libraryObjectsContainer');
-                if (!container) return;
-                
-                if (objects.length === 0) {
-                    container.innerHTML = '<p class="text-muted">No hay objetos aún</p>';
-                    return;
-                }
-                
-                let html = '<div class="row">';
-                const colors = ['#1a5f7a', '#2d3e50', '#663399', '#e74c3c', '#27ae60', '#f39c12'];
-                
-                objects.forEach((obj, idx) => {
-                    const bgColor = colors[idx % colors.length];
-                    html += `
-                        <div class="col-md-6 mb-3">
-                            <div class="card">
-                                <div style="height: 150px; background: linear-gradient(135deg, ${bgColor} 0%, rgba(255,255,255,0.1) 100%); display: flex; align-items: center; justify-content: center; font-size: 2rem; color: rgba(255,255,255,0.3);">
-                                    <i class="bi bi-image"></i>
-                                </div>
-                                <div class="card-body">
-                                    <h6 class="card-title">${obj.name}</h6>
-                                    <p class="card-text small">${obj.description || ''}</p>
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <button type="button" class="btn btn-primary btn-sm" onclick="editLibraryObject(${obj.id})">✏️ Editar</button>
-                                        <button type="button" class="btn btn-danger btn-sm" onclick="deleteLibraryObject(${obj.id})">🗑️ Eliminar</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                });
-                html += '</div>';
-                container.innerHTML = html;
-            } catch (error) {
-                console.error('Error cargando objetos:', error);
-            }
-        }
-
-        async function editLibraryObject(id) {
-            alert('Función editar aún no implementada. ID: ' + id);
-        }
-
-        async function deleteLibraryObject(id) {
-            if (!confirm('¿Eliminar este objeto?')) return;
-            
-            const token = localStorage.getItem('token');
-            try {
-                const response = await fetch(`${API_URL}/api/library/objects/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                
-                if (response.ok) {
-                    alert('✅ Objeto eliminado');
-                    loadLibraryObjectsSimple();
-                } else {
-                    alert('❌ Error al eliminar');
-                }
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
-        }
-
         async function loadLibraryObjects(page = 1) {
             const token = localStorage.getItem('token');
             const container = document.getElementById('libraryObjectsContainer');
