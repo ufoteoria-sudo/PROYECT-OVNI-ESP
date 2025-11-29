@@ -93,6 +93,9 @@
             <a class="navbar-brand" href="index.html">
                 <i class="bi bi-telescope"></i> UAP Analysis
             </a>
+            <a href="index.html" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
         </div>
     </nav>
 
@@ -157,10 +160,17 @@
 
             let html = '<div class="row g-4">';
             objects.forEach(obj => {
+                // Crear color de fondo basado en el hash del nombre
+                const colors = ['#1a5f7a', '#2d3e50', '#663399', '#e74c3c', '#27ae60', '#f39c12'];
+                const colorIndex = obj.id % colors.length;
+                const bgColor = colors[colorIndex];
+                
                 html += `
                     <div class="col-lg-3 col-md-4 col-sm-6">
                         <div class="card h-100">
-                            <img src="${obj.image}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="${obj.name}">
+                            <div class="card-img-top" style="height: 200px; background: linear-gradient(135deg, ${bgColor} 0%, rgba(255,255,255,0.1) 100%); display: flex; align-items: center; justify-content: center; font-size: 3rem; color: rgba(255,255,255,0.3);">
+                                <i class="bi bi-image"></i>
+                            </div>
                             <div class="card-body">
                                 <h5 class="card-title">${obj.name}</h5>
                                 <div class="category-badge">${obj.category}</div>
