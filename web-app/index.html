@@ -3711,7 +3711,7 @@
                 loadTrainingImages();
                 loadTrainingStats();
             } else if (section === 'libraryAdmin' && currentUser?.role === 'admin') {
-                loadLibraryObjects();
+                loadLibraryObjectsSimple();
             }
 
             // Actualizar nav activo
@@ -6766,85 +6766,51 @@ function generateForensicSection(forensic) {
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creando...';
 
-                const formData = new FormData();
-                formData.append('name', document.getElementById('libraryName').value);
-                formData.append('category', document.getElementById('libraryCategory').value);
-                formData.append('typology', document.getElementById('libraryTypology').value || '');
-                formData.append('description', document.getElementById('libraryDescription').value);
+                const category = document.getElementById('libraryCategory').value;
+                const name = document.getElementById('libraryName').value;
+                const description = document.getElementById('libraryDescription').value;
+                
+                if (!category || !name || !description) {
+                    throw new Error('Campos requeridos: Categoría, Nombre y Descripción');
+                }
 
-                // Keywords
-                const keywordsInput = document.getElementById('libraryKeywords').value;
-                const keywords = keywordsInput.split(',').map(k => k.trim()).filter(k => k.length > 0);
-                formData.append('keywords', JSON.stringify(keywords));
-
-                // Visual patterns
-                const patternsInput = document.getElementById('libraryVisualPatterns').value;
-                const patterns = patternsInput.split(',').map(p => p.trim()).filter(p => p.length > 0);
-                formData.append('visualPatterns', JSON.stringify(patterns));
-
-                // Características
-                const characteristics = {
-                    shape: document.getElementById('libraryShape').value || null,
-                    size: document.getElementById('librarySize').value || null,
-                    speed: document.getElementById('librarySpeed').value || null,
-                    luminosity: document.getElementById('libraryLuminosity').value || null,
-                    color: (document.getElementById('libraryColors').value || '').split(',').map(c => c.trim()).filter(c => c),
-                    behavior: document.getElementById('libraryBehavior').value || null
+                const libObject = {
+                    category,
+                    name,
+                    description,
+                    image: document.getElementById('libraryImage')?.value || 'https://via.placeholder.com/300x200?text=' + encodeURIComponent(name),
+                    characteristics: [
+                        document.getElementById('libraryShape')?.value,
+                        document.getElementById('librarySize')?.value,
+                        document.getElementById('librarySpeed')?.value,
+                        document.getElementById('libraryLuminosity')?.value
+                    ].filter(c => c)
                 };
-                formData.append('characteristics', JSON.stringify(characteristics));
 
-                // Imágenes
-                const imageFiles = document.getElementById('libraryImages').files;
-                if (imageFiles.length === 0) {
-                    msgDiv.innerHTML = `<div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle"></i> Debes subir al menos una imagen
-                    </div>`;
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="bi bi-plus-circle"></i> Crear Objeto';
-                    return;
-                }
-
-                for (let i = 0; i < imageFiles.length && i < 5; i++) {
-                    formData.append('images', imageFiles[i]);
-                }
-
-                const response = await fetch(`${API_URL}/api/library/manual`, {
+                const response = await fetch(`${API_URL}/api/library/objects`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
                     },
-                    body: formData
+                    body: JSON.stringify(libObject)
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
                     msgDiv.innerHTML = `<div class="alert alert-success">
-                        <i class="bi bi-check-circle"></i> ${data.message}
-                        <br><small>Sincronizado automáticamente con sistema de entrenamiento</small>
+                        <i class="bi bi-check-circle"></i> ✅ Objeto creado: ${data.name}
                     </div>`;
-                    
-                    // Limpiar formulario
                     document.getElementById('libraryObjectForm').reset();
-                    document.getElementById('libraryImagesPreview').style.display = 'none';
-                    document.getElementById('libraryImagesPreview').innerHTML = '';
-                    
-                    // Recargar lista
-                    loadLibraryObjects();
-
-                    // Limpiar mensaje después de 5s
-                    setTimeout(() => {
-                        msgDiv.innerHTML = '';
-                    }, 5000);
+                    setTimeout(() => { msgDiv.innerHTML = ''; }, 3000);
                 } else {
-                    msgDiv.innerHTML = `<div class="alert alert-danger">
-                        <i class="bi bi-exclamation-triangle"></i> ${data.error || 'Error al crear objeto'}
-                    </div>`;
+                    throw new Error(data.error || 'Error al crear');
                 }
             } catch (error) {
-                console.error('Error:', error);
+                const msgDiv = document.getElementById('libraryFormMsg');
                 msgDiv.innerHTML = `<div class="alert alert-danger">
-                    <i class="bi bi-x-circle"></i> Error de conexión: ${error.message}
+                    <i class="bi bi-x-circle"></i> Error: ${error.message}
                 </div>`;
             } finally {
                 submitBtn.disabled = false;
@@ -6887,6 +6853,70 @@ function generateForensicSection(forensic) {
         };
 
         // Cargar TODOS los objetos de biblioteca con paginación y filtros
+        // Cargar lista simple de objetos biblioteca
+        async function loadLibraryObjectsSimple() {
+            try {
+                const response = await fetch(`${API_URL}/api/library/objects`);
+                const objects = await response.json();
+                
+                const container = document.getElementById('libraryObjectsContainer');
+                if (!container) return;
+                
+                if (objects.length === 0) {
+                    container.innerHTML = '<p class="text-muted">No hay objetos aún</p>';
+                    return;
+                }
+                
+                let html = '<div class="row">';
+                objects.forEach(obj => {
+                    html += `
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <img src="${obj.image}" class="card-img-top" style="height: 150px; object-fit: cover;" alt="${obj.name}">
+                                <div class="card-body">
+                                    <h6 class="card-title">${obj.name}</h6>
+                                    <p class="card-text small">${obj.description || ''}</p>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-primary btn-sm" onclick="editLibraryObject(${obj.id})">✏️ Editar</button>
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="deleteLibraryObject(${obj.id})">🗑️ Eliminar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error cargando objetos:', error);
+            }
+        }
+
+        async function editLibraryObject(id) {
+            alert('Función editar aún no implementada. ID: ' + id);
+        }
+
+        async function deleteLibraryObject(id) {
+            if (!confirm('¿Eliminar este objeto?')) return;
+            
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`${API_URL}/api/library/objects/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    alert('✅ Objeto eliminado');
+                    loadLibraryObjectsSimple();
+                } else {
+                    alert('❌ Error al eliminar');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
         async function loadLibraryObjects(page = 1) {
             const token = localStorage.getItem('token');
             const container = document.getElementById('libraryObjectsContainer');
