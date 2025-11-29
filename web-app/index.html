@@ -3874,101 +3874,103 @@
             }
 
             const token = localStorage.getItem('token');
-            const formData = new FormData();
-            formData.append('file', file);
-
-            // NUEVO: Agregar contexto del avistamiento
-            const sightingContext = {
-                movement: document.getElementById('contextMovement').value,
-                speedEstimate: parseInt(document.getElementById('contextSpeed').value),
-                altitudeEstimate: document.getElementById('contextAltitude').value,
-                lightColor: Array.from(document.getElementById('contextLightColor').selectedOptions).map(opt => opt.value),
-                lightIntensity: document.getElementById('contextLightIntensity').value,
-                soundHeard: document.getElementById('contextSound').value,
-                duration: document.getElementById('contextDuration').value,
-                weatherConditions: document.getElementById('contextWeather').value,
-                witnessActivity: document.getElementById('contextActivity').value,
-                substanceUse: document.querySelector('input[name="substanceUse"]:checked').value === 'true',
-                beliefLevel: document.getElementById('contextBelief').value,
-                accompanied: document.getElementById('contextAccompanied').value === 'true',
-                witnessCount: document.getElementById('contextAccompanied').value === 'true' ? 
-                    parseInt(document.getElementById('contextWitnessCount').value) || 1 : 1,
-                emotionalState: document.getElementById('contextEmotional').value,
-                previousSightings: document.getElementById('contextPreviousSightings').value === 'true',
-                previousSightingsCount: document.getElementById('contextPreviousSightings').value === 'true' ? 
-                    parseInt(document.getElementById('contextPreviousCount').value) || 0 : 0,
-                incidentDescription: document.getElementById('contextDescription').value
-            };
-
-            formData.append('sightingContext', JSON.stringify(sightingContext));
-
             const uploadBtn = document.getElementById('uploadBtn');
             const progressContainer = document.getElementById('progressContainer');
             const progressBar = document.getElementById('progressBar');
             const progressText = document.getElementById('progressText');
 
-            uploadBtn.disabled = true;
-            uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Subiendo...';
-            progressContainer.style.display = 'block';
+            // Leer archivo como base64
+            const reader = new FileReader();
+            
+            reader.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const percentComplete = (e.loaded / e.total) * 50; // 50% del progreso
+                    progressBar.style.width = percentComplete + '%';
+                    progressText.textContent = `Leyendo archivo: ${Math.round(percentComplete)}%`;
+                }
+            };
 
-            try {
-                const xhr = new XMLHttpRequest();
+            reader.onload = async () => {
+                progressContainer.style.display = 'block';
+                progressBar.style.width = '50%';
+                progressText.textContent = 'Enviando datos...';
+                uploadBtn.disabled = true;
+                uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Subiendo...';
 
-                // Progreso
-                xhr.upload.addEventListener('progress', (e) => {
-                    if (e.lengthComputable) {
-                        const percentComplete = (e.loaded / e.total) * 100;
-                        progressBar.style.width = percentComplete + '%';
-                        progressText.textContent = `Subiendo: ${Math.round(percentComplete)}%`;
-                    }
-                });
+                try {
+                    // Construir contexto del avistamiento
+                    const sightingContext = {
+                        movement: document.getElementById('contextMovement')?.value || 'no observado',
+                        speedEstimate: parseInt(document.getElementById('contextSpeed')?.value || '3'),
+                        altitudeEstimate: document.getElementById('contextAltitude')?.value || 'no determinada',
+                        lightColor: Array.from(document.getElementById('contextLightColor')?.selectedOptions || []).map(opt => opt.value),
+                        lightIntensity: document.getElementById('contextLightIntensity')?.value || 'media',
+                        soundHeard: document.getElementById('contextSound')?.value || 'sin sonido',
+                        duration: document.getElementById('contextDuration')?.value || '',
+                        weatherConditions: document.getElementById('contextWeather')?.value || 'despejado',
+                        witnessActivity: document.getElementById('contextActivity')?.value || '',
+                        substanceUse: document.querySelector('input[name="substanceUse"]:checked')?.value === 'true' || false,
+                        beliefLevel: document.getElementById('contextBelief')?.value || 'neutral',
+                        accompanied: document.getElementById('contextAccompanied')?.value === 'true' || false,
+                        witnessCount: document.getElementById('contextAccompanied')?.value === 'true' ? parseInt(document.getElementById('contextWitnessCount')?.value || '1') : 1,
+                        emotionalState: document.getElementById('contextEmotional')?.value || 'curioso',
+                        previousSightings: document.getElementById('contextPreviousSightings')?.value === 'true' || false,
+                        previousSightingsCount: document.getElementById('contextPreviousSightings')?.value === 'true' ? parseInt(document.getElementById('contextPreviousCount')?.value || '0') : 0,
+                        incidentDescription: document.getElementById('contextDescription')?.value || ''
+                    };
 
-                // Completado
-                xhr.addEventListener('load', () => {
-                    if (xhr.status === 201) {
-                        const data = JSON.parse(xhr.responseText);
-                        showUploadAlert('¡Archivo y contexto subidos exitosamente! El análisis comenzará automáticamente.', 'success');
+                    // Enviar JSON con archivo base64
+                    const uploadData = {
+                        fileName: file.name,
+                        fileSize: file.size,
+                        sightingContext: sightingContext,
+                        imageData: reader.result // Base64
+                    };
+
+                    const response = await fetch(`${API_URL}/api/uploads`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(uploadData)
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        progressBar.style.width = '100%';
+                        progressText.textContent = '¡Completado!';
+                        showUploadAlert('¡Archivo y contexto subidos exitosamente!', 'success');
                         
                         // Limpiar formulario
                         document.getElementById('uploadForm').reset();
                         document.getElementById('previewContainer').style.display = 'none';
-                        progressContainer.style.display = 'none';
-                        
-                        // Resetear campos especiales
-                        document.getElementById('contextWitnessCount').style.display = 'none';
-                        document.getElementById('contextPreviousCount').style.display = 'none';
+                        setTimeout(() => {
+                            progressContainer.style.display = 'none';
+                        }, 1000);
                         
                         // Recargar lista de uploads
                         loadUploads();
                     } else {
-                        const error = JSON.parse(xhr.responseText);
+                        const error = await response.json();
                         showUploadAlert(error.error || 'Error al subir archivo', 'danger');
                     }
-                    
+                } catch (error) {
+                    console.error('Error:', error);
+                    showUploadAlert('Error: ' + error.message, 'danger');
+                } finally {
                     uploadBtn.disabled = false;
                     uploadBtn.innerHTML = '<i class="bi bi-cloud-upload"></i> Subir y Analizar';
-                });
+                }
+            };
 
-                // Error
-                xhr.addEventListener('error', () => {
-                    showUploadAlert('Error de conexión', 'danger');
-                    uploadBtn.disabled = false;
-                    uploadBtn.innerHTML = '<i class="bi bi-cloud-upload"></i> Subir y Analizar';
-                    progressContainer.style.display = 'none';
-                });
-
-                // Enviar
-                xhr.open('POST', `${API_URL}/api/uploads`);
-                xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-                xhr.send(formData);
-
-            } catch (error) {
-                console.error('Error:', error);
-                showUploadAlert('Error al subir archivo', 'danger');
+            reader.onerror = () => {
+                showUploadAlert('Error al leer el archivo', 'danger');
                 uploadBtn.disabled = false;
-                uploadBtn.innerHTML = '<i class="bi bi-cloud-upload"></i> Subir Archivo';
-                progressContainer.style.display = 'none';
-            }
+                uploadBtn.innerHTML = '<i class="bi bi-cloud-upload"></i> Subir y Analizar';
+            };
+
+            reader.readAsDataURL(file);
         });
 
         // Cargar lista de uploads

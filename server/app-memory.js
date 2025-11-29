@@ -153,27 +153,72 @@ app.post('/api/users', (req, res) => {
 // ==================== RUTAS UPLOADS ====================
 
 app.post('/api/uploads', verificarAutenticacion, (req, res) => {
-  const { fileName, fileSize, context, imageData } = req.body;
-  
-  const upload = {
-    id: nextUploadId++,
-    userId: req.user.id,
-    fileName: fileName || 'image.jpg',
-    fileSize: fileSize || 0,
-    context: context || '',
-    imageData: imageData || '',
-    createdAt: new Date(),
-    status: 'completed',
-    analysisScore: Math.floor(Math.random() * 100)
-  };
-  
-  uploads.push(upload);
-  res.status(201).json({ message: 'Upload completado', upload });
+  try {
+    // Soportar tanto JSON como FormData
+    let fileName = req.body.fileName || 'upload.jpg';
+    let fileSize = req.body.fileSize || 0;
+    let sightingContext = {};
+    let imageData = '';
+
+    // Si viene FormData
+    if (req.body.sightingContext) {
+      try {
+        sightingContext = typeof req.body.sightingContext === 'string' 
+          ? JSON.parse(req.body.sightingContext)
+          : req.body.sightingContext;
+      } catch (e) {
+        console.log('⚠️  No se pudo parsear contexto:', e.message);
+      }
+    }
+
+    // Si viene imageData base64
+    if (req.body.imageData) {
+      imageData = req.body.imageData;
+      if (!fileSize && imageData.length) {
+        fileSize = Math.ceil(imageData.length / 1.33); // Aproximado
+      }
+    }
+
+    const upload = {
+      id: nextUploadId++,
+      userId: req.user.id,
+      fileName: fileName,
+      fileSize: fileSize,
+      sightingContext: sightingContext,
+      imageData: imageData || '',
+      createdAt: new Date(),
+      status: 'completed',
+      analysisScore: Math.floor(Math.random() * 100),
+      analysis: {
+        confidence: Math.random() * 100,
+        classification: ['Desconocido', 'Dron', 'Globo', 'Fenómeno Aéreo'][Math.floor(Math.random() * 4)],
+        details: 'Análisis completado exitosamente'
+      }
+    };
+
+    uploads.push(upload);
+    
+    console.log(`✅ Upload guardado: ${fileName} (Usuario: ${req.user.email})`);
+    
+    res.status(201).json({ 
+      message: 'Upload completado exitosamente', 
+      upload: upload 
+    });
+  } catch (error) {
+    console.error('❌ Error en upload:', error.message);
+    res.status(400).json({ error: 'Error al procesar upload: ' + error.message });
+  }
 });
 
 app.get('/api/uploads', verificarAutenticacion, (req, res) => {
-  const userUploads = uploads.filter(u => u.userId === req.user.id);
-  res.json(userUploads);
+  try {
+    const userUploads = uploads.filter(u => u.userId === req.user.id);
+    console.log(`📊 Obteniendo ${userUploads.length} uploads para usuario ${req.user.email}`);
+    res.json(userUploads);
+  } catch (error) {
+    console.error('❌ Error al obtener uploads:', error.message);
+    res.status(400).json({ error: 'Error al obtener uploads' });
+  }
 });
 
 // ==================== APIs GRATUITAS ====================
