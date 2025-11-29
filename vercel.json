@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "buildCommand": "cd server && npm install",
+  "outputDirectory": "server",
+  "env": {
+    "NODE_ENV": "production",
+    "PORT": "3000"
+  },
+  "functions": {
+    "server/app-memory.js": {
+      "memory": 512,
+      "maxDuration": 60
+    }
+  }
+}
