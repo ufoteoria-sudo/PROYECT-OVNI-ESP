@@ -809,8 +809,8 @@
                     allImages.push({ url: fullUrl, description: img.description });
                 });
             }
-            if (phenomenon.imageUrl) {
-                const fullUrl = phenomenon.imageUrl.startsWith('http') ? phenomenon.imageUrl : `${API_URL}${phenomenon.imageUrl}`;
+            if (phenomenon.image) {
+                const fullUrl = phenomenon.image.startsWith('http') ? phenomenon.image : `${API_URL}${phenomenon.image}`;
                 allImages.push({ url: fullUrl, description: 'Imagen principal' });
             }
 
@@ -949,8 +949,8 @@
                     allImages.push({ url: fullUrl, description: img.description });
                 });
             }
-            if (object.imageUrl) {
-                const fullUrl = object.imageUrl.startsWith('http') ? object.imageUrl : `${API_URL}${object.imageUrl}`;
+            if (object.image) {
+                const fullUrl = object.image.startsWith('http') ? object.image : `${API_URL}${object.image}`;
                 allImages.push({ url: fullUrl, description: 'Imagen original' });
             }
 
