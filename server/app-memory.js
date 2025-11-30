@@ -38,12 +38,6 @@ let users = [
 let uploads = [];
 let nextUploadId = 1;
 
-let trainingImages = [];
-let nextTrainingImageId = 1;
-
-let libraryObjects = [];
-let nextLibraryObjectId = 1;
-
 // ==================== AUTENTICACIÓN ====================
 
 const generarToken = (user) => {
@@ -118,8 +112,78 @@ app.get('/api/auth/me', verificarAutenticacion, (req, res) => {
 // ==================== BIBLIOTECA VISUAL ====================
 
 let libraryObjects = [
-  { id: 1, category: 'Objetos Celestes', name: 'Venus', description: 'Planeta Venus.', image: 'https://via.placeholder.com/300x200?text=Venus', characteristics: [], confidence: 0.95 },
-  { id: 2, category: 'Satélites Artificiales', name: 'ISS', description: 'Estación Espacial.', image: 'https://via.placeholder.com/300x200?text=ISS', characteristics: [], confidence: 0.99 }
+  { 
+    id: 1, 
+    category: 'Objetos Celestes', 
+    name: 'Venus', 
+    description: 'El planeta Venus es el segundo planeta más cercano al Sol. A menudo se ve como la estrella de la mañana o la estrella de la tarde.', 
+    image: 'https://via.placeholder.com/300x200?text=Venus', 
+    characteristics: ['Brillante', 'Movimiento lento'], 
+    confidence: 0.95 
+  },
+  { 
+    id: 2, 
+    category: 'Satélites Artificiales', 
+    name: 'Estación Espacial Internacional (ISS)', 
+    description: 'La ISS es una estación espacial en órbita alrededor de la Tierra. Es uno de los objetos más brillantes del cielo nocturno.', 
+    image: 'https://via.placeholder.com/300x200?text=ISS', 
+    characteristics: ['Órbita regular', 'Muy brillante', 'Predecible'], 
+    confidence: 0.99 
+  },
+  { 
+    id: 3, 
+    category: 'Satélites Artificiales', 
+    name: 'Satélite de la Constelación Starlink', 
+    description: 'Los satélites Starlink de SpaceX forman cadenas visibles atravesando el cielo. Muchos avistamientos de OVNIs son en realidad estos satélites.', 
+    image: 'https://via.placeholder.com/300x200?text=Starlink', 
+    characteristics: ['En cadena', 'Movimiento rápido', 'Reciente'], 
+    confidence: 0.92 
+  },
+  { 
+    id: 4, 
+    category: 'Objetos Celestes', 
+    name: 'Júpiter', 
+    description: 'Júpiter es el planeta más grande del sistema solar. Es claramente visible a simple vista y a menudo se confunde con avistamientos OVNIs.', 
+    image: 'https://via.placeholder.com/300x200?text=Jupiter', 
+    characteristics: ['Brillante', 'Rojo/Anaranjado', 'Estático'], 
+    confidence: 0.94 
+  },
+  { 
+    id: 5, 
+    category: 'Globos Atmosféricos', 
+    name: 'Globo Meteorológico', 
+    description: 'Los globos meteorológicos se utilizan para obtener mediciones de temperatura, presión y humedad en la atmósfera superior.', 
+    image: 'https://via.placeholder.com/300x200?text=Globo', 
+    characteristics: ['Reflexión', 'Movimiento lento', 'Forma esférica'], 
+    confidence: 0.88 
+  },
+  { 
+    id: 6, 
+    category: 'Fenómenos Ópticos', 
+    name: 'Rayo Luz Solar Reflejada', 
+    description: 'La luz solar reflejada en nubes, cristales de hielo o la atmósfera pueden crear efectos visuales que simulan avistamientos OVNIs.', 
+    image: 'https://via.placeholder.com/300x200?text=Fenomeno', 
+    characteristics: ['Luz intensa', 'Temporal', 'Óptico'], 
+    confidence: 0.85 
+  },
+  { 
+    id: 7, 
+    category: 'Aeronaves Convencionales', 
+    name: 'Avión Comercial - Boeing 747', 
+    description: 'Los aviones comerciales grandes pueden parecer objetos extraños especialmente cuando se ven desde ciertos ángulos o durante la noche.', 
+    image: 'https://via.placeholder.com/300x200?text=Avion', 
+    characteristics: ['Luces posicionales', 'Sonido de motores', 'Trayectoria recta'], 
+    confidence: 0.96 
+  },
+  { 
+    id: 8, 
+    category: 'Drones', 
+    name: 'Dron Comercial DJI Phantom', 
+    description: 'Los drones son cada vez más comunes y responsables de muchos avistamientos de OVNIs en los últimos años.', 
+    image: 'https://via.placeholder.com/300x200?text=Dron', 
+    characteristics: ['Luces LED', 'Hover capability', 'Sonido distintivo'], 
+    confidence: 0.91 
+  }
 ];
 
 let libraryCategories = [
@@ -129,10 +193,33 @@ let libraryCategories = [
 
 let nextLibraryObjectId = 3;
 
+app.get('/api/training', verificarAutenticacion, (req, res) => {
+  const { page = 1, limit = 20 } = req.query;
+  res.json({ images: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } });
+});
+
 app.get('/api/library/objects', (req, res) => {
   const category = req.query.category;
-  const objects = category ? libraryObjects.filter(obj => obj.category === category) : libraryObjects;
-  res.json(objects);
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 12;
+  const skip = (page - 1) * limit;
+  
+  let objects = category ? libraryObjects.filter(obj => obj.category === category) : libraryObjects;
+  const total = objects.length;
+  const paginatedObjects = objects.slice(skip, skip + limit);
+  
+  res.json({
+    success: true,
+    data: paginatedObjects,
+    pagination: {
+      page: page,
+      limit: limit,
+      total: total,
+      totalPages: Math.ceil(total / limit)
+    },
+    objects: paginatedObjects,
+    total: total
+  });
 });
 
 app.get('/api/library/categories', (req, res) => {
@@ -270,30 +357,7 @@ app.get('/api/uploads', verificarAutenticacion, (req, res) => {
   try {
     const userUploads = uploads.filter(u => u.userId === req.user.id);
     console.log(`📊 Obteniendo ${userUploads.length} uploads para usuario ${req.user.email}`);
-    
-    // Retornar estructura compatible con frontend (app.js)
-    res.json({
-      analyses: userUploads.map(u => ({
-        id: u.id,
-        fileName: u.fileName,
-        fileType: 'image',
-        fileSize: u.fileSize,
-        status: u.status,
-        uploadDate: u.createdAt,
-        views: 0,
-        exifData: u.sightingContext || {},
-        aiAnalysis: u.analysis || {},
-        matchResults: [],
-        createdAt: u.createdAt,
-        updatedAt: u.createdAt
-      })),
-      pagination: {
-        total: userUploads.length,
-        limit: 50,
-        offset: 0,
-        hasMore: false
-      }
-    });
+    res.json(userUploads);
   } catch (error) {
     console.error('❌ Error al obtener uploads:', error.message);
     res.status(400).json({ error: 'Error al obtener uploads' });
@@ -352,270 +416,6 @@ app.delete('/api/uploads/:id', verificarAutenticacion, (req, res) => {
     res.status(400).json({ error: error.message });
   }
 });
-
-// ==================== TRAINING IMAGES ====================
-
-app.get('/api/training', verificarAutenticacion, (req, res) => {
-  try {
-    const { page = 1, limit = 20, category, verified } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    
-    let filtered = trainingImages;
-    if (category) filtered = filtered.filter(img => img.category === category);
-    if (verified !== undefined) filtered = filtered.filter(img => img.verified === (verified === 'true'));
-    
-    const total = filtered.length;
-    const images = filtered.slice(skip, skip + parseInt(limit));
-    
-    res.json({
-      images: images.map(img => ({
-        _id: img.id,
-        id: img.id,
-        category: img.category,
-        type: img.type,
-        description: img.description || '',
-        verified: img.verified || false,
-        isActive: img.isActive !== false,
-        createdAt: img.createdAt,
-        imageUrl: img.imageUrl || '',
-        thumbnailUrl: img.thumbnailUrl || img.imageUrl || '',
-        fullImageUrl: img.fullImageUrl || img.imageUrl || '',
-        promotedToLibrary: img.promotedToLibrary || false
-      })),
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        totalPages: Math.ceil(total / parseInt(limit))
-      }
-    });
-  } catch (error) {
-    console.error('Error listando imágenes de entrenamiento:', error);
-    res.status(500).json({
-      error: 'Error listando imágenes de entrenamiento',
-      details: error.message
-    });
-  }
-});
-
-app.post('/api/training', verificarAutenticacion, (req, res) => {
-  try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Solo administradores pueden crear imágenes de entrenamiento' });
-    }
-    
-    const { category, type, description, imageUrl, thumbnailUrl } = req.body;
-    
-    if (!category || !type) {
-      return res.status(400).json({ error: 'Se requieren categoría y tipo' });
-    }
-    
-    const newImage = {
-      id: nextTrainingImageId++,
-      category,
-      type,
-      description: description || '',
-      imageUrl: imageUrl || '',
-      thumbnailUrl: thumbnailUrl || '',
-      fullImageUrl: imageUrl || '',
-      verified: false,
-      isActive: true,
-      promotedToLibrary: false,
-      createdAt: new Date(),
-      uploadedBy: { username: 'admin', email: req.user.email }
-    };
-    
-    trainingImages.push(newImage);
-    
-    res.status(201).json({
-      message: 'Imagen de entrenamiento subida exitosamente',
-      trainingImage: newImage
-    });
-  } catch (error) {
-    console.error('Error subiendo imagen de entrenamiento:', error);
-    res.status(500).json({
-      error: 'Error subiendo imagen de entrenamiento',
-      details: error.message
-    });
-  }
-});
-
-// ==================== LIBRARY OBJECTS ====================
-
-app.get('/api/library/objects', (req, res) => {
-  try {
-    res.json({
-      objects: libraryObjects.map(obj => ({
-        id: obj.id,
-        _id: obj.id,
-        name: obj.name,
-        category: obj.category,
-        description: obj.description,
-        image: obj.image || '',
-        characteristics: obj.characteristics || [],
-        confidence: obj.confidence || 0.5,
-        createdAt: obj.createdAt || new Date(),
-        createdBy: obj.createdBy || 'admin'
-      })),
-      total: libraryObjects.length
-    });
-  } catch (error) {
-    console.error('Error obteniendo objetos de biblioteca:', error);
-    res.status(500).json({
-      error: 'Error obteniendo objetos de biblioteca',
-      details: error.message
-    });
-  }
-});
-
-app.post('/api/library/objects', verificarAutenticacion, (req, res) => {
-  try {
-    if (req.user.role !== 'admin' && !req.user.isAdmin) {
-      return res.status(403).json({ error: 'Solo admin' });
-    }
-    
-    const { category, name, description, image } = req.body;
-    
-    if (!name || !category) {
-      return res.status(400).json({ error: 'Se requieren nombre y categoría' });
-    }
-    
-    const obj = {
-      id: nextLibraryObjectId++,
-      category,
-      name,
-      description: description || '',
-      image: image || '',
-      characteristics: [],
-      confidence: 0.5,
-      createdAt: new Date(),
-      createdBy: req.user.email
-    };
-    
-    libraryObjects.push(obj);
-    res.status(201).json(obj);
-  } catch (error) {
-    console.error('Error creando objeto de biblioteca:', error);
-    res.status(500).json({
-      error: 'Error creando objeto de biblioteca',
-      details: error.message
-    });
-  }
-});
-
-app.put('/api/library/objects/:id', verificarAutenticacion, (req, res) => {
-  try {
-    if (req.user.role !== 'admin' && !req.user.isAdmin) {
-      return res.status(403).json({ error: 'Solo admin' });
-    }
-    
-    const obj = libraryObjects.find(o => o.id === parseInt(req.params.id));
-    if (!obj) return res.status(404).json({ error: 'No encontrado' });
-    
-    Object.assign(obj, req.body);
-    res.json(obj);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.delete('/api/library/objects/:id', verificarAutenticacion, (req, res) => {
-  try {
-    if (req.user.role !== 'admin' && !req.user.isAdmin) {
-      return res.status(403).json({ error: 'Solo admin' });
-    }
-    
-    const idx = libraryObjects.findIndex(o => o.id === parseInt(req.params.id));
-    if (idx === -1) return res.status(404).json({ error: 'No encontrado' });
-    
-    const deleted = libraryObjects.splice(idx, 1);
-    res.json(deleted[0]);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// ==================== EXPORTACIÓN / PDF ====================
-
-// Generar PDF del análisis (POST /api/export/:id/generate)
-app.post('/api/export/:id/generate', verificarAutenticacion, (req, res) => {
-  try {
-    const analysisId = parseInt(req.params.id);
-    const upload = uploads.find(u => u.id === analysisId && u.userId === req.user.id);
-    
-    if (!upload) {
-      return res.status(404).json({ error: 'Análisis no encontrado' });
-    }
-    
-    // Generar un PDF HTML simple en texto
-    const pdfContent = generarPDFAnalisis(upload);
-    
-    // Enviar como texto/html para que el navegador lo imprima como PDF
-    res.contentType('application/pdf');
-    res.send(pdfContent);
-    
-  } catch (error) {
-    console.error('Error generando PDF:', error);
-    res.status(500).json({ error: 'Error generando PDF', details: error.message });
-  }
-});
-
-// Función auxiliar: Generar contenido PDF del análisis
-function generarPDFAnalisis(upload) {
-  const now = new Date().toLocaleString('es-ES');
-  
-  // Construcción de HTML para PDF (usando html2pdf o similar en frontend si es necesario)
-  // Por ahora retornamos un buffer simulado que será un PDF simple
-  
-  const content = `
-  <!DOCTYPE html>
-  <html>
-  <head>
-    <meta charset="UTF-8">
-    <title>Análisis UAP - Reporte</title>
-    <style>
-      body { font-family: Arial, sans-serif; margin: 20px; }
-      h1 { color: #667eea; }
-      .section { margin: 20px 0; padding: 10px; border: 1px solid #ddd; }
-      .label { font-weight: bold; color: #434343; }
-    </style>
-  </head>
-  <body>
-    <h1>🛸 REPORTE DE ANÁLISIS UAP</h1>
-    <div class="section">
-      <div class="label">ID del Análisis:</div>
-      <div>${upload.id}</div>
-    </div>
-    <div class="section">
-      <div class="label">Archivo:</div>
-      <div>${upload.fileName}</div>
-    </div>
-    <div class="section">
-      <div class="label">Tamaño:</div>
-      <div>${(upload.fileSize / 1024).toFixed(2)} KB</div>
-    </div>
-    <div class="section">
-      <div class="label">Contexto del Avistamiento:</div>
-      <div>${JSON.stringify(upload.sightingContext, null, 2)}</div>
-    </div>
-    <div class="section">
-      <div class="label">Resultado del Análisis:</div>
-      <div>${JSON.stringify(upload.analysis, null, 2)}</div>
-    </div>
-    <div class="section">
-      <div class="label">Puntuación:</div>
-      <div>${upload.analysisScore}%</div>
-    </div>
-    <div style="margin-top: 40px; text-align: center; color: #999; font-size: 12px;">
-      <p>Generado: ${now}</p>
-      <p>UAP Analysis System v2.0</p>
-    </div>
-  </body>
-  </html>
-  `;
-  
-  return content;
-}
 
 // ==================== APIs GRATUITAS ====================
 
