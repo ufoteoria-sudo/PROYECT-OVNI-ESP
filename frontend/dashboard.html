@@ -4115,9 +4115,19 @@
                     }
                 });
 
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const data = await response.json();
 
-                if (data.analyses.length === 0) {
+                // Manejar diferentes formatos de respuesta
+                let analyses = data.analyses || data.data || data || [];
+                if (!Array.isArray(analyses)) {
+                    analyses = [];
+                }
+
+                if (analyses.length === 0) {
                     container.innerHTML = `
                         <div class="text-center text-muted p-4">
                             <i class="bi bi-inbox" style="font-size: 48px;"></i>
@@ -4146,58 +4156,70 @@
                 `;
 
                 const tbody = document.getElementById('uploadsTableBody');
-                data.analyses.forEach(analysis => {
-                    const row = document.createElement('tr');
-                    row.setAttribute('data-analysis-id', analysis.id); // Para WebSocket updates
-                    
-                    const statusBadge = getStatusBadge(analysis.status);
-                    const typeIcon = analysis.fileType === 'image' ? 'bi-image' : 'bi-camera-video';
-                    
-                    // Botones según estado
-                    let actionButtons = '';
-                    
-                    if (analysis.status === 'pending' && analysis.fileType === 'image') {
-                        actionButtons = `
-                            <button class="btn btn-sm btn-primary" onclick="analyzeImage('${analysis.id}')" title="Analizar con IA">
-                                <i class="bi bi-robot"></i>
+                analyses.forEach(analysis => {
+                    try {
+                        const row = document.createElement('tr');
+                        const analysisId = analysis.id || analysis._id || 'unknown';
+                        row.setAttribute('data-analysis-id', analysisId);
+                        
+                        const statusBadge = getStatusBadge(analysis.status || 'pending');
+                        const fileType = analysis.fileType || analysis.type || 'unknown';
+                        const typeIcon = (fileType === 'image' || fileType.includes('image')) ? 'bi-image' : 'bi-camera-video';
+                        const fileName = analysis.fileName || analysis.filename || analysis.name || 'Sin nombre';
+                        const fileSize = analysis.fileSize || analysis.size || 0;
+                        const uploadDate = analysis.uploadDate || analysis.uploadedAt || new Date().toISOString();
+                        
+                        // Botones según estado
+                        let actionButtons = '';
+                        const status = analysis.status || 'pending';
+                        
+                        if ((status === 'pending' || status === 'uploaded') && (fileType === 'image' || fileType.includes('image'))) {
+                            actionButtons = `
+                                <button class="btn btn-sm btn-primary" onclick="analyzeImage('${analysisId}')" title="Analizar con IA">
+                                    <i class="bi bi-robot"></i>
+                                </button>
+                            `;
+                        } else if (status === 'analyzing') {
+                            actionButtons = `
+                                <button class="btn btn-sm btn-secondary" disabled>
+                                    <span class="spinner-border spinner-border-sm"></span>
+                                </button>
+                            `;
+                        } else if (status === 'completed') {
+                            actionButtons = `
+                                <button class="btn btn-sm btn-success" onclick="viewAnalysis('${analysisId}')" title="Ver resultados">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            `;
+                        }
+                        
+                        actionButtons += `
+                            <button class="btn btn-sm btn-danger ms-1" onclick="deleteUpload('${analysisId}')" title="Eliminar">
+                                <i class="bi bi-trash"></i>
                             </button>
                         `;
-                    } else if (analysis.status === 'analyzing') {
-                        actionButtons = `
-                            <button class="btn btn-sm btn-secondary" disabled>
-                                <span class="spinner-border spinner-border-sm"></span>
-                            </button>
+                        
+                        row.innerHTML = `
+                            <td><i class="bi ${typeIcon}"></i> ${fileName}</td>
+                            <td><span class="badge bg-secondary">${fileType}</span></td>
+                            <td>${formatFileSize(fileSize)}</td>
+                            <td>${statusBadge}</td>
+                            <td>${new Date(uploadDate).toLocaleString('es-ES')}</td>
+                            <td class="text-nowrap">${actionButtons}</td>
                         `;
-                    } else if (analysis.status === 'completed') {
-                        actionButtons = `
-                            <button class="btn btn-sm btn-success" onclick="viewAnalysis('${analysis.id}')" title="Ver resultados">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                        `;
+                        tbody.appendChild(row);
+                    } catch (itemError) {
+                        console.error('Error procesando análisis:', itemError);
                     }
-                    
-                    actionButtons += `
-                        <button class="btn btn-sm btn-danger ms-1" onclick="deleteUpload('${analysis.id}')" title="Eliminar">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    `;
-                    
-                    row.innerHTML = `
-                        <td><i class="bi ${typeIcon}"></i> ${analysis.fileName}</td>
-                        <td><span class="badge bg-secondary">${analysis.fileType}</span></td>
-                        <td>${formatFileSize(analysis.fileSize)}</td>
-                        <td>${statusBadge}</td>
-                        <td>${new Date(analysis.uploadDate).toLocaleString('es-ES')}</td>
-                        <td class="text-nowrap">${actionButtons}</td>
-                    `;
-                    tbody.appendChild(row);
                 });
 
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error al cargar uploads:', error);
                 container.innerHTML = `
-                    <div class="alert alert-danger">
-                        Error al cargar uploads
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Error al cargar uploads</strong><br>
+                        <small>${error.message || 'No se pudieron obtener los archivos subidos'}</small>
                     </div>
                 `;
             }
