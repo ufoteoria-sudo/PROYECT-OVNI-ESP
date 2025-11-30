@@ -40,11 +40,11 @@ El sistema **UAP Analysis System** es un análisis multisensorial científico de
 
 | Fecha | Hora | Commit | Cambios |
 |-------|------|--------|---------|
+| 30 Nov | 13:15 | `de78cd8` | Fix: Filtro de categoría slug→nombre en objetos/fenómenos | `app-memory.js` |
 | 30 Nov | 12:20 | `9f12cd9` | Sincronizar cambios biblioteca visual | `app-memory.js` |
 | 30 Nov | 12:14 | `a1fec2d` | Correcciones API (estructura {success, data, pagination}) | `app-memory.js` |
 | 30 Nov | 12:09 | `0db9ed0` | Correcciones APIs (GET endpoints con estructura adecuada) | `app-memory.js`, `web-app/index.html` |
 | 27 Nov | 15:14 | `3f46625` | ✅ Sistema restaurado - Backend funcional | `app-memory.js` |
-| ❌ | - | (anterior) | Historial previo | - |
 
 ### 🔧 Arquivos Modificados Recientemente
 - `server/app-memory.js` - **+91 líneas** (actualizaciones principales)
@@ -342,6 +342,8 @@ python3 -m http.server 8000
 
 | Bug | Causa | Solución | Status |
 |-----|-------|----------|--------|
+| Objetos NO se mostraban en biblioteca.html | Slug vs Name mismatch en filtro | Mapeo slug→nombre en endpoint | ✅ |
+| Fenómenos tampoco se filtraban | Mismo problema en endpoint | Mapeo slug→nombre en endpoint | ✅ |
 | Campo `gpsTimeStamp` undefined | No opcional | Campo opcional + null default | ✅ |
 | `scientificFeatures` undefined | Faltante en modelo | Agregado con array vacío | ✅ |
 | Ruta `/status` no existía | No implementada | GET `/api/analyze/:id/status` | ✅ |
