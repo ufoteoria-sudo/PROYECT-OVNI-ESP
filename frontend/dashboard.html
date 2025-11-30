@@ -3237,6 +3237,37 @@
                 socket.on('error', (error) => {
                     console.error('⚠️ Error WebSocket:', error);
                 });
+                
+                // 📡 Listeners para sincronización de biblioteca
+                socket.on('library:object-created', (event) => {
+                    console.log('📡 Admin: Objeto creado', event.data);
+                    showLibraryNotification(`✅ Nuevo objeto: ${event.data.name}`);
+                });
+                
+                socket.on('library:object-updated', (event) => {
+                    console.log('📡 Admin: Objeto actualizado', event.data);
+                    showLibraryNotification(`✏️ Objeto actualizado: ${event.data.name}`);
+                });
+                
+                socket.on('library:object-deleted', (event) => {
+                    console.log('📡 Admin: Objeto eliminado', event.data);
+                    showLibraryNotification(`🗑️ Objeto eliminado: ${event.data.name}`);
+                });
+                
+                socket.on('library:phenomenon-created', (event) => {
+                    console.log('📡 Admin: Fenómeno creado', event.data);
+                    showLibraryNotification(`✅ Nuevo fenómeno: ${event.data.name}`);
+                });
+                
+                socket.on('library:phenomenon-updated', (event) => {
+                    console.log('📡 Admin: Fenómeno actualizado', event.data);
+                    showLibraryNotification(`✏️ Fenómeno actualizado: ${event.data.name}`);
+                });
+                
+                socket.on('library:phenomenon-deleted', (event) => {
+                    console.log('📡 Admin: Fenómeno eliminado', event.data);
+                    showLibraryNotification(`🗑️ Fenómeno eliminado: ${event.data.name}`);
+                });
             }
         }
 
@@ -5484,6 +5515,21 @@ function generateForensicSection(forensic) {
                 </div>
             `;
             setTimeout(() => container.innerHTML = '', 3000);
+        }
+
+        function showLibraryNotification(message) {
+            const container = document.getElementById('libraryAdminMsg') || document.querySelector('.admin-msg');
+            if (container) {
+                container.innerHTML = `
+                    <div class="alert alert-info alert-dismissible fade show">
+                        📡 ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                setTimeout(() => container.innerHTML = '', 4000);
+            } else {
+                console.log('📡 Notificación biblioteca:', message);
+            }
         }
 
         // Cargar uploads al mostrar la sección

@@ -1,8 +1,14 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const http = require('http');
+const socketIO = require('socket.io');
 
 const app = express();
+const server = http.createServer(app);
+const io = socketIO(server, {
+  cors: { origin: "*", methods: ["GET", "POST"] }
+});
 
 // Middlewares
 app.use(cors());
@@ -11,6 +17,14 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Servir frontend
 app.use(express.static(path.join(__dirname, '../web-app')));
+
+// Socket.IO eventos
+io.on('connection', (socket) => {
+  console.log(`📡 Cliente conectado: ${socket.id}`);
+  socket.on('disconnect', () => {
+    console.log(`📡 Cliente desconectado: ${socket.id}`);
+  });
+});
 
 // ==================== BASE DE DATOS EN MEMORIA ====================
 
@@ -276,6 +290,10 @@ app.post('/api/library/objects', verificarAutenticacion, (req, res) => {
   if (!category || !name) return res.status(400).json({ error: 'Requerido' });
   const obj = { id: nextLibraryObjectId++, category, name, description, image: req.body.image || '', characteristics: [], confidence: 0.5, createdBy: req.user.email };
   libraryObjects.push(obj);
+  
+  // 📡 Broadcast a todos los clientes
+  io.emit('library:object-created', { type: 'object', action: 'created', data: obj });
+  
   res.status(201).json(obj);
 });
 
@@ -284,6 +302,10 @@ app.put('/api/library/objects/:id', verificarAutenticacion, (req, res) => {
   const obj = libraryObjects.find(o => o.id === parseInt(req.params.id));
   if (!obj) return res.status(404).json({ error: 'No encontrado' });
   Object.assign(obj, req.body);
+  
+  // 📡 Broadcast a todos los clientes
+  io.emit('library:object-updated', { type: 'object', action: 'updated', data: obj });
+  
   res.json(obj);
 });
 
@@ -292,6 +314,10 @@ app.delete('/api/library/objects/:id', verificarAutenticacion, (req, res) => {
   const idx = libraryObjects.findIndex(o => o.id === parseInt(req.params.id));
   if (idx === -1) return res.status(404).json({ error: 'No encontrado' });
   const deleted = libraryObjects.splice(idx, 1);
+  
+  // 📡 Broadcast a todos los clientes
+  io.emit('library:object-deleted', { type: 'object', action: 'deleted', data: deleted[0] });
+  
   res.json(deleted[0]);
 });
 
@@ -311,6 +337,10 @@ app.post('/api/library/phenomena', verificarAutenticacion, (req, res) => {
     createdBy: req.user.email
   };
   phenomena.push(phenomenon);
+  
+  // 📡 Broadcast a todos los clientes
+  io.emit('library:phenomenon-created', { type: 'phenomenon', action: 'created', data: phenomenon });
+  
   res.status(201).json(phenomenon);
 });
 
@@ -319,6 +349,10 @@ app.put('/api/library/phenomena/:id', verificarAutenticacion, (req, res) => {
   const phenomenon = phenomena.find(p => p.id === parseInt(req.params.id));
   if (!phenomenon) return res.status(404).json({ error: 'No encontrado' });
   Object.assign(phenomenon, req.body);
+  
+  // 📡 Broadcast a todos los clientes
+  io.emit('library:phenomenon-updated', { type: 'phenomenon', action: 'updated', data: phenomenon });
+  
   res.json(phenomenon);
 });
 
@@ -327,6 +361,10 @@ app.delete('/api/library/phenomena/:id', verificarAutenticacion, (req, res) => {
   const idx = phenomena.findIndex(p => p.id === parseInt(req.params.id));
   if (idx === -1) return res.status(404).json({ error: 'No encontrado' });
   const deleted = phenomena.splice(idx, 1);
+  
+  // 📡 Broadcast a todos los clientes
+  io.emit('library:phenomenon-deleted', { type: 'phenomenon', action: 'deleted', data: deleted[0] });
+  
   res.json(deleted[0]);
 });
 
@@ -550,8 +588,9 @@ app.get('*', (req, res) => {
 // ==================== INICIAR SERVIDOR ====================
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`✅ Servidor iniciado en puerto ${PORT} (Modo: MEMORIA)`);
+  console.log(`📡 WebSocket (Socket.IO) activado para sincronización en tiempo real`);
   console.log(`📊 ${users.length} usuarios cargados`);
   console.log(`🔐 Admin: ufoteoria@gmail.com / admin123`);
   console.log(`🔐 Usuario: investigador@uap.com / investigador123`);
