@@ -177,12 +177,19 @@ app.get('/api/training', verificarAutenticacion, (req, res) => {
 });
 
 app.get('/api/library/objects', (req, res) => {
-  const category = req.query.category;
+  let categorySlug = req.query.category;
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 12;
   const skip = (page - 1) * limit;
   
-  let objects = category ? libraryObjects.filter(obj => obj.category === category) : libraryObjects;
+  // Convertir slug a nombre de categoría
+  let categoryName = null;
+  if (categorySlug) {
+    const cat = libraryCategories.find(c => c.slug === categorySlug);
+    categoryName = cat ? cat.name : categorySlug;
+  }
+  
+  let objects = categoryName ? libraryObjects.filter(obj => obj.category === categoryName) : libraryObjects;
   const total = objects.length;
   const paginatedObjects = objects.slice(skip, skip + limit);
   
@@ -218,11 +225,18 @@ app.get('/api/library/phenomena', (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 12;
   const skip = (page - 1) * limit;
-  const category = req.query.category;
+  let categorySlug = req.query.category;
+  
+  // Convertir slug a nombre de categoría
+  let categoryName = null;
+  if (categorySlug) {
+    const cat = libraryCategories.find(c => c.slug === categorySlug);
+    categoryName = cat ? cat.name : categorySlug;
+  }
   
   let filtered = phenomena;
-  if (category) {
-    filtered = phenomena.filter(p => p.category === category);
+  if (categoryName) {
+    filtered = phenomena.filter(p => p.category === categoryName);
   }
   
   const total = filtered.length;
