@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test WebSocket - Sincronización</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #1a1a2e;
+            color: #00ff00;
+            padding: 20px;
+            max-width: 1000px;
+        }
+        .container {
+            background: #16213e;
+            border: 2px solid #00ff00;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #0ff;
+            text-shadow: 0 0 10px #0ff;
+        }
+        .log {
+            background: #0a0a0a;
+            border: 1px solid #00ff00;
+            padding: 10px;
+            height: 400px;
+            overflow-y: auto;
+            margin: 10px 0;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 2px solid #00ff00;
+            padding-left: 10px;
+        }
+        .log-entry.error {
+            color: #ff0000;
+            border-left-color: #ff0000;
+        }
+        .log-entry.success {
+            color: #00ff00;
+            border-left-color: #00ff00;
+        }
+        .log-entry.info {
+            color: #00ffff;
+            border-left-color: #00ffff;
+        }
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+            border-radius: 3px;
+        }
+        button:hover {
+            background: #00cc00;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .status.connected {
+            background: #00ff00;
+            color: #000;
+        }
+        .status.disconnected {
+            background: #ff0000;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test WebSocket - Sincronización en Tiempo Real</h1>
+    
+    <div class="container">
+        <h2>📊 Estado de Conexión</h2>
+        <div id="status" class="status disconnected">
+            🔴 Desconectado
+        </div>
+        <div>
+            Socket ID: <strong id="socketId">—</strong>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📡 Eventos Escuchados</h2>
+        <div id="log" class="log"></div>
+        <button onclick="clearLog()">Limpiar Log</button>
+    </div>
+
+    <div class="container">
+        <h2>📋 Eventos Monitoreados</h2>
+        <ul>
+            <li>library:object-created ✅</li>
+            <li>library:object-updated ✅</li>
+            <li>library:object-deleted ✅</li>
+            <li>library:phenomenon-created ✅</li>
+            <li>library:phenomenon-updated ✅</li>
+            <li>library:phenomenon-deleted ✅</li>
+        </ul>
+        <p>⚠️ Abre otra pestaña y crea/edita/elimina un objeto en el admin para ver los eventos aquí</p>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const API_URL = 'http://localhost:3000';
+        const logEl = document.getElementById('log');
+        const statusEl = document.getElementById('status');
+        const socketIdEl = document.getElementById('socketId');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${timestamp}] ${message}`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function clearLog() {
+            logEl.innerHTML = '';
+        }
+
+        function updateStatus(connected) {
+            if (connected) {
+                statusEl.className = 'status connected';
+                statusEl.textContent = '🟢 Conectado';
+            } else {
+                statusEl.className = 'status disconnected';
+                statusEl.textContent = '🔴 Desconectado';
+            }
+        }
+
+        // Conectar a WebSocket
+        const socket = io(API_URL, {
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000,
+            reconnectionAttempts: 5
+        });
+
+        socket.on('connect', () => {
+            socketIdEl.textContent = socket.id;
+            updateStatus(true);
+            log('✅ Conectado a WebSocket', 'success');
+        });
+
+        socket.on('disconnect', () => {
+            socketIdEl.textContent = '—';
+            updateStatus(false);
+            log('❌ Desconectado de WebSocket', 'error');
+        });
+
+        socket.on('error', (error) => {
+            log(`⚠️ Error: ${error}`, 'error');
+        });
+
+        // Escuchar eventos de biblioteca
+        socket.on('library:object-created', (event) => {
+            log(`📦 OBJECT CREATED: ${event.data.name} (ID: ${event.data.id})`, 'success');
+            console.log('Datos:', event.data);
+        });
+
+        socket.on('library:object-updated', (event) => {
+            log(`✏️ OBJECT UPDATED: ${event.data.name} (ID: ${event.data.id})`, 'success');
+            console.log('Datos:', event.data);
+        });
+
+        socket.on('library:object-deleted', (event) => {
+            log(`🗑️ OBJECT DELETED: ${event.data.name} (ID: ${event.data.id})`, 'error');
+            console.log('Datos:', event.data);
+        });
+
+        socket.on('library:phenomenon-created', (event) => {
+            log(`⚡ PHENOMENON CREATED: ${event.data.name} (ID: ${event.data.id})`, 'success');
+            console.log('Datos:', event.data);
+        });
+
+        socket.on('library:phenomenon-updated', (event) => {
+            log(`✏️ PHENOMENON UPDATED: ${event.data.name} (ID: ${event.data.id})`, 'success');
+            console.log('Datos:', event.data);
+        });
+
+        socket.on('library:phenomenon-deleted', (event) => {
+            log(`🗑️ PHENOMENON DELETED: ${event.data.name} (ID: ${event.data.id})`, 'error');
+            console.log('Datos:', event.data);
+        });
+
+        // Log inicial
+        log('🧪 Test WebSocket iniciado', 'info');
+        log('⏳ Conectando a servidor...', 'info');
+    </script>
+</body>
+</html>

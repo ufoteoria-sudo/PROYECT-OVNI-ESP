@@ -282,6 +282,32 @@
         </div>
 
         <!-- Tabs Dinámicas -->
+        <div class="mb-4">
+            <div class="row g-2">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text bg-primary text-white"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" id="searchInput" 
+                               placeholder="🔍 Buscar por nombre, descripción o palabras clave..."
+                               onkeyup="performSearch()">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="sortSelect" onchange="performSearch()">
+                        <option value="name">Ordenar: A-Z (Alfabético)</option>
+                        <option value="recent">Recientes primero</option>
+                        <option value="confidence">Mayor confianza primero</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">
+                        <i class="bi bi-arrow-counterclockwise"></i> Limpiar Filtros
+                    </button>
+                </div>
+            </div>
+            <div id="searchStatus" class="mt-2"></div>
+        </div>
+
         <ul class="nav nav-tabs" id="categoryTabs" role="tablist">
             <!-- Las tabs se generarán dinámicamente desde JavaScript -->
         </ul>
@@ -514,6 +540,106 @@
             await loadStats();
             await loadCategoriesDynamic(); // NUEVO: Cargar categorías y generar tabs
         });
+
+        // 🔍 BÚSQUEDA GLOBAL - Buscar en todas las categorías
+        let searchTimeout;
+        let allItemsCache = { phenomena: [], objects: [] };
+
+        async function performSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(async () => {
+                const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+                const sortBy = document.getElementById('sortSelect')?.value || 'name';
+                
+                if (!searchTerm) {
+                    // Si no hay búsqueda, mostrar categorías normales
+                    loadCategoryContent(document.querySelector('.nav-link.active')?.id?.replace('-tab', '') || '');
+                    return;
+                }
+
+                // Cargar todos los items si no están en caché
+                if (allItemsCache.phenomena.length === 0 || allItemsCache.objects.length === 0) {
+                    try {
+                        const [phenResponse, objResponse] = await Promise.all([
+                            fetch(`${API_URL}/api/library/phenomena?limit=1000`),
+                            fetch(`${API_URL}/api/library/objects?limit=1000`)
+                        ]);
+                        
+                        if (phenResponse.ok) {
+                            const phenData = await phenResponse.json();
+                            allItemsCache.phenomena = phenData.data || [];
+                        }
+                        
+                        if (objResponse.ok) {
+                            const objData = await objResponse.json();
+                            allItemsCache.objects = objData.data || [];
+                        }
+                    } catch (err) {
+                        console.error('Error cargando items para búsqueda:', err);
+                    }
+                }
+
+                // Combinar y filtrar
+                const allItems = [
+                    ...allItemsCache.phenomena.map(p => ({ ...p, type: 'phenomenon' })),
+                    ...allItemsCache.objects.map(o => ({ ...o, type: 'object' }))
+                ];
+
+                const filtered = allItems.filter(item => {
+                    const name = item.name?.toLowerCase() || '';
+                    const desc = item.description?.toLowerCase() || '';
+                    const keywords = (item.keywords?.toLowerCase() || '') + ' ' + (item.characteristics?.join(' ').toLowerCase() || '');
+                    
+                    return name.includes(searchTerm) || desc.includes(searchTerm) || keywords.includes(searchTerm);
+                });
+
+                // Aplicar ordenamiento
+                if (sortBy === 'name') {
+                    filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                } else if (sortBy === 'confidence') {
+                    filtered.sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+                } else if (sortBy === 'recent') {
+                    // Mantener orden original (más recientes primero)
+                }
+
+                displaySearchResults(filtered, searchTerm);
+            }, 500);
+        }
+
+        function displaySearchResults(results, searchTerm) {
+            const container = document.getElementById('categoryTabContent');
+            
+            if (results.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-search"></i> No se encontraron resultados para "<strong>${escapeHtml(searchTerm)}</strong>"
+                    </div>
+                `;
+                return;
+            }
+
+            const statusEl = document.getElementById('searchStatus');
+            statusEl.innerHTML = `<small class="text-muted">📊 ${results.length} resultado(s) encontrado(s)</small>`;
+
+            let html = '<div class="row">';
+            
+            results.forEach(item => {
+                const card = item.type === 'phenomenon' 
+                    ? createPhenomenonCard(item) 
+                    : createObjectCard(item);
+                html += `<div class="col-md-3 mb-4">${card}</div>`;
+            });
+            
+            html += '</div>';
+            container.innerHTML = `<div class="tab-pane fade show active" style="padding-top: 20px;">${html}</div>`;
+        }
+
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('sortSelect').value = 'name';
+            document.getElementById('searchStatus').innerHTML = '';
+            loadCategoryContent(document.querySelector('.nav-link.active')?.id?.replace('-tab', '') || '');
+        }
 
         // NUEVO: Cargar categorías y generar tabs dinámicamente
         async function loadCategoriesDynamic() {
