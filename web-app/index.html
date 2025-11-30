@@ -4330,6 +4330,164 @@
             }
         }
 
+        // ==================== FUNCIONES DE SOPORTE PARA MODAL ====================
+
+        // Generar barra de confianza coordinada (4 capas ponderadas)
+        function generateConfidenceBar(data) {
+            // Pesos por defecto (pueden configurarse desde admin)
+            const weights = {
+                manual: 0.20,    // 20%
+                exif: 0.15,      // 15%
+                ia: 0.45,        // 45%
+                matching: 0.20   // 20%
+            };
+
+            // Valores de ejemplo (0-100)
+            const scores = {
+                manual: data.sightingContext ? 75 : 0,
+                exif: data.hasExifData ? (data.exifData?.accuracy || 70) : 0,
+                ia: data.aiAnalysis?.confidence || 0,
+                matching: data.bestMatch?.matchPercentage || 0
+            };
+
+            // Calcular confianza final ponderada
+            const finalConfidence = Math.round(
+                scores.manual * weights.manual +
+                scores.exif * weights.exif +
+                scores.ia * weights.ia +
+                scores.matching * weights.matching
+            );
+
+            // Determinar color
+            let color, label;
+            if (finalConfidence < 30) {
+                color = 'danger';
+                label = 'Baja';
+            } else if (finalConfidence < 70) {
+                color = 'warning';
+                label = 'Media';
+            } else {
+                color = 'success';
+                label = 'Alta';
+            }
+
+            return `
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <h6>Confianza Final: <strong>${finalConfidence}%</strong> (${label})</h6>
+                        <div class="progress" style="height: 30px;">
+                            <div class="progress-bar bg-${color}" style="width: ${finalConfidence}%">
+                                ${finalConfidence}%
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted">
+                            <strong>Pesos:</strong><br>
+                            Manual 20% | EXIF 15% | IA 45% | Matching 20%
+                        </small>
+                    </div>
+                </div>
+                <div class="row g-2 mt-2">
+                    <div class="col-6 col-md-3">
+                        <div class="card p-2 text-center">
+                            <small class="text-muted">Manual</small>
+                            <strong>${scores.manual}/100</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="card p-2 text-center">
+                            <small class="text-muted">EXIF</small>
+                            <strong>${scores.exif}/100</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="card p-2 text-center">
+                            <small class="text-muted">IA</small>
+                            <strong>${Math.round(scores.ia)}/100</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="card p-2 text-center">
+                            <small class="text-muted">Matching</small>
+                            <strong>${Math.round(scores.matching)}/100</strong>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Generar información de capa manual
+        function generateManualLayer(data) {
+            const context = data.sightingContext || {};
+            return `
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Hora:</strong> ${context.time || 'N/A'}</p>
+                        <p><strong>Ubicación:</strong> ${context.location || 'N/A'}</p>
+                        <p><strong>Clima:</strong> ${context.weather || 'N/A'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Comportamiento:</strong> ${context.behavior || 'N/A'}</p>
+                        <p><strong>Forma:</strong> ${context.shape || 'N/A'}</p>
+                        <p><strong>Color:</strong> ${context.color || 'N/A'}</p>
+                    </div>
+                </div>
+                ${context.description ? `<hr><p><strong>Descripción:</strong> ${context.description}</p>` : ''}
+            `;
+        }
+
+        // Generar información EXIF
+        function generateExifData(exifData) {
+            return `
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Modelo Cámara:</strong> ${exifData.camera || 'N/A'}</p>
+                        <p><strong>Lente:</strong> ${exifData.lens || 'N/A'}</p>
+                        <p><strong>ISO:</strong> ${exifData.iso || 'N/A'}</p>
+                        <p><strong>Velocidad:</strong> ${exifData.shutter || 'N/A'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>F-Number:</strong> ${exifData.fnumber || 'N/A'}</p>
+                        <p><strong>Focal Length:</strong> ${exifData.focalLength || 'N/A'}</p>
+                        <p><strong>GPS:</strong> ${exifData.gps || 'N/A'}</p>
+                        <p><strong>Fecha:</strong> ${exifData.date || 'N/A'}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Generar información IA
+        function generateAiData(aiAnalysis) {
+            return `
+                <div class="alert alert-light">
+                    <h6><strong>Clasificación:</strong> ${aiAnalysis.category || 'Desconocido'}</h6>
+                    <p><strong>Confianza IA:</strong> <span class="badge bg-primary">${Math.round(aiAnalysis.confidence || 0)}%</span></p>
+                    <p><strong>Descripción:</strong> ${aiAnalysis.description || 'Sin descripción'}</p>
+                    ${aiAnalysis.labels ? `
+                        <p><strong>Etiquetas:</strong></p>
+                        <div>
+                            ${aiAnalysis.labels.map(label => `<span class="badge bg-info me-1">${label}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // Generar mejor coincidencia en biblioteca
+        function generateBestMatch(bestMatch) {
+            return `
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6><strong>${bestMatch.name || 'N/A'}</strong></h6>
+                        <p><strong>Categoría:</strong> ${bestMatch.category || 'N/A'}</p>
+                        <p><strong>Matching:</strong> <span class="badge bg-success">${Math.round(bestMatch.matchPercentage || 0)}%</span></p>
+                        <p><strong>Descripción:</strong> ${bestMatch.description || 'Sin descripción'}</p>
+                    </div>
+                </div>
+            `;
+        }
+
         // OBSOLETO: Polling eliminado - ahora usamos WebSocket
         // La función pollAnalysisStatus ha sido reemplazada por subscribeToAnalysis
 
@@ -4488,71 +4646,112 @@
         function generateAnalysisContent(data) {
             let html = '<div class="container-fluid">';
 
-            // Información del archivo
+            // Encabezado con información del archivo
             html += `
                 <div class="row mb-4">
                     <div class="col-12">
-                        <h6 class="border-bottom pb-2"><i class="bi bi-file-earmark"></i> Archivo</h6>
-                        <p><strong>Nombre:</strong> ${data.fileName || 'N/A'}</p>
-                        <p><strong>Fecha de subida:</strong> ${data.uploadDate ? new Date(data.uploadDate).toLocaleString('es-ES') : 'N/A'}</p>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="mb-0"><i class="bi bi-file-earmark"></i> ${data.fileName || 'Análisis'}</h6>
+                                <small class="text-muted">
+                                    Subido: ${data.uploadDate ? new Date(data.uploadDate).toLocaleString('es-ES') : 'N/A'}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PREVIEW DE IMAGEN -->
+                ${data.imageData ? `
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <img src="${data.imageData}" alt="Análisis" style="max-width: 100%; max-height: 400px; border-radius: 8px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- BARRA DE CONFIANZA COORDINADA -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <strong><i class="bi bi-speedometer2"></i> Confianza Coordinada</strong>
+                            </div>
+                            <div class="card-body">
+                                ${generateConfidenceBar(data)}
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
 
-            // RESUMEN DE CONFIANZA (CAPA 9 - Primero porque es el resultado final)
-            if (data.analysisData?.confidence !== undefined) {
-                html += generateConfidenceSummary(data.analysisData);
-            }
+            // CAPA 1: DATOS MANUALES (Usuario)
+            html += `
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white">
+                                <strong><i class="bi bi-person"></i> Capa 1: Entrada Manual (20%)</strong>
+                            </div>
+                            <div class="card-body">
+                                ${generateManualLayer(data)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
 
-            // ANÁLISIS FORENSE (CAPA 3)
-            if (data.forensicAnalysis || data.analysisData?.forensicAnalysis) {
-                html += generateForensicSection(data.forensicAnalysis || data.analysisData.forensicAnalysis);
-            }
+            // CAPA 2: DATOS EXIF (Fotografía)
+            html += `
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-success">
+                            <div class="card-header bg-success text-white">
+                                <strong><i class="bi bi-image"></i> Capa 2: Datos EXIF (15%)</strong>
+                            </div>
+                            <div class="card-body">
+                                ${data.hasExifData && data.exifData ? generateExifData(data.exifData) : '<p class="text-muted">No hay datos EXIF disponibles</p>'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
 
-            // DATOS EXIF (CAPA 1)
-            if (data.hasExifData && data.analysisData?.exifData) {
-                html += generateExifSection(data.analysisData.exifData);
-            }
+            // CAPA 3: ANÁLISIS IA (Modelo ML)
+            html += `
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <strong><i class="bi bi-robot"></i> Capa 3: Análisis IA (45%)</strong>
+                            </div>
+                            <div class="card-body">
+                                ${data.hasAiAnalysis && data.aiAnalysis ? generateAiData(data.aiAnalysis) : '<p class="text-muted">No hay análisis IA disponible</p>'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
 
-            // ANÁLISIS VISUAL (CAPA 2)
-            if (data.analysisData?.visualAnalysis) {
-                html += generateVisualAnalysisSection(data.analysisData.visualAnalysis);
-            }
-
-            // ANÁLISIS IA (CAPA 2 continuación)
-            if (data.hasAiAnalysis && data.analysisData?.aiAnalysis) {
-                html += generateAiSection(data.analysisData.aiAnalysis);
-            }
-
-            // COMPARACIÓN CIENTÍFICA (CAPA 4)
-            if (data.hasMatches && data.analysisData?.matchResults?.length > 0) {
-                html += generateMatchesSection(data.analysisData.matchResults);
-            }
-
-            // TRAINING ENHANCEMENT (CAPA 5)
-            if (data.analysisData?.trainingEnhancement) {
-                html += generateTrainingSection(data.analysisData.trainingEnhancement);
-            }
-
-            // VALIDACIÓN EXTERNA (CAPA 6)
-            if (data.analysisData?.externalValidation) {
-                html += generateExternalValidationSection(data.analysisData.externalValidation);
-            }
-
-            // DATOS METEOROLÓGICOS (CAPA 7)
-            if (data.analysisData?.weatherData) {
-                html += generateWeatherSection(data.analysisData.weatherData);
-            }
-
-            // COMPARACIÓN ATMOSFÉRICA (CAPA 8)
-            if (data.analysisData?.atmosphericComparison) {
-                html += generateAtmosphericSection(data.analysisData.atmosphericComparison);
-            }
-
-            // Si no hay análisis
-            if (!data.hasExifData && !data.hasAiAnalysis) {
-                html += '<div class="alert alert-warning">No hay datos de análisis disponibles.</div>';
-            }
+            // CAPA 4: MATCHING CON BIBLIOTECA (Comparación)
+            html += `
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-danger">
+                            <div class="card-header bg-danger text-white">
+                                <strong><i class="bi bi-book"></i> Capa 4: Matching Biblioteca (20%)</strong>
+                            </div>
+                            <div class="card-body">
+                                ${data.bestMatch ? generateBestMatch(data.bestMatch) : '<p class="text-muted">No hay coincidencias en biblioteca</p>'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
 
             html += '</div>';
             return html;

@@ -278,6 +278,38 @@ app.get('/api/uploads/:id', verificarAutenticacion, (req, res) => {
   }
 });
 
+// Endpoint para obtener estado de análisis (compatible con frontend)
+app.get('/api/analyze/:id/status', verificarAutenticacion, (req, res) => {
+  try {
+    const upload = uploads.find(u => u.id === parseInt(req.params.id) && u.userId === req.user.id);
+    if (!upload) return res.status(404).json({ error: 'No encontrado' });
+    
+    // Retornar formato compatible con frontend
+    res.json({
+      analysisId: upload.id,
+      fileName: upload.fileName,
+      uploadDate: upload.createdAt,
+      status: upload.status,
+      imageData: upload.imageData,
+      sightingContext: upload.sightingContext,
+      analysis: upload.analysis,
+      analysisScore: upload.analysisScore,
+      hasExifData: !!upload.sightingContext && Object.keys(upload.sightingContext).length > 0,
+      hasAiAnalysis: !!upload.analysis,
+      exifData: upload.sightingContext,
+      aiAnalysis: {
+        category: upload.analysis?.classification,
+        confidence: upload.analysis?.confidence || 0,
+        description: upload.analysis?.details
+      },
+      bestMatch: null, // Placeholder para matching con biblioteca
+      usedForTraining: false
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 app.delete('/api/uploads/:id', verificarAutenticacion, (req, res) => {
   try {
     const idx = uploads.findIndex(u => u.id === parseInt(req.params.id) && u.userId === req.user.id);
