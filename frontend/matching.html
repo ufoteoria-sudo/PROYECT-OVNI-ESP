@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Matching Visual - UAP Analysis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .container-match {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+
+        .upload-area {
+            background: rgba(255, 255, 255, 0.95);
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-2px);
+        }
+
+        .upload-area.dragover {
+            background: rgba(102, 126, 234, 0.1);
+            border-color: #764ba2;
+        }
+
+        .preview {
+            max-width: 100%;
+            max-height: 300px;
+            margin: 1rem 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .analysis-result {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .match-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+        }
+
+        .match-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .match-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+
+        .match-info {
+            padding: 1rem;
+        }
+
+        .similarity-bar {
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .similarity-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s;
+        }
+
+        .loading {
+            text-align: center;
+        }
+
+        .spinner-border {
+            color: #667eea;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-match">
+        <h1 class="text-white mb-4">
+            <i class="bi bi-eye"></i> Sistema de Matching Visual
+        </h1>
+
+        <!-- Upload Area -->
+        <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+            <i class="bi bi-cloud-arrow-up" style="font-size: 3rem; color: #667eea;"></i>
+            <h4 class="mt-3">Subir imagen para análisis</h4>
+            <p class="text-muted">Haz clic o arrastra una imagen aquí</p>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+
+        <!-- Preview -->
+        <div id="previewContainer" style="display: none; text-align: center;">
+            <img id="preview" class="preview" alt="Vista previa">
+            <button class="btn btn-secondary mt-2" onclick="resetUpload()">
+                <i class="bi bi-x-circle"></i> Borrar imagen
+            </button>
+        </div>
+
+        <!-- Analysis Result -->
+        <div id="analysisResult" style="display: none;">
+            <!-- Stats -->
+            <div class="stats" id="statsContainer"></div>
+
+            <!-- Matches -->
+            <h4 class="mt-4 mb-3">
+                <i class="bi bi-search"></i> Resultados de Matching
+            </h4>
+            <div id="matchesContainer"></div>
+
+            <div id="noMatches" class="alert alert-info" style="display: none;">
+                <i class="bi bi-info-circle"></i> No se encontraron coincidencias en la biblioteca
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading" style="display: none;" class="loading mt-4">
+            <div class="spinner-border mb-3" role="status">
+                <span class="visually-hidden">Analizando...</span>
+            </div>
+            <p class="text-white">Analizando imagen y buscando coincidencias...</p>
+        </div>
+
+        <!-- Error -->
+        <div id="errorContainer"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000';
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const preview = document.getElementById('preview');
+        const previewContainer = document.getElementById('previewContainer');
+        const analysisResult = document.getElementById('analysisResult');
+        const loading = document.getElementById('loading');
+        const errorContainer = document.getElementById('errorContainer');
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFile(files[0]);
+            }
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showError('Por favor, selecciona una imagen válida');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const imageBase64 = e.target.result;
+                preview.src = imageBase64;
+                previewContainer.style.display = 'block';
+                uploadArea.style.display = 'none';
+
+                // Analizar imagen
+                analyzeImage(imageBase64);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function analyzeImage(imageBase64) {
+            loading.style.display = 'block';
+            analysisResult.style.display = 'none';
+            errorContainer.innerHTML = '';
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showError('Por favor, inicia sesión para usar el matching visual');
+                loading.style.display = 'none';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/matching/analyze`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ imageBase64 })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Error analizando imagen');
+                }
+
+                displayResults(data);
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Error: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function displayResults(data) {
+            const { analysis, matches } = data;
+
+            // Stats
+            const statsHtml = `
+                <div class="stat-card">
+                    <div class="stat-value">${analysis.brightness}</div>
+                    <div class="stat-label">Luminosidad</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${analysis.contrast}</div>
+                    <div class="stat-label">Contraste</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${analysis.width}x${analysis.height}</div>
+                    <div class="stat-label">Resolución</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${analysis.dominantColors.length}</div>
+                    <div class="stat-label">Colores Detectados</div>
+                </div>
+            `;
+            document.getElementById('statsContainer').innerHTML = statsHtml;
+
+            // Matches
+            if (matches.length === 0) {
+                document.getElementById('noMatches').style.display = 'block';
+                document.getElementById('matchesContainer').innerHTML = '';
+            } else {
+                document.getElementById('noMatches').style.display = 'none';
+                const matchesHtml = matches.map(match => `
+                    <div class="match-card">
+                        <img src="${match.image}" alt="${match.name}" onerror="this.src='https://via.placeholder.com/400x150?text=Sin%20imagen'">
+                        <div class="match-info">
+                            <h6>${match.name}</h6>
+                            <small class="text-muted">${match.category} • ${match.type === 'phenomenon' ? 'Fenómeno' : 'Objeto'}</small>
+                            <div class="similarity-bar">
+                                <div class="similarity-fill" style="width: ${match.similarity}%"></div>
+                            </div>
+                            <small class="text-muted mt-2 d-block">Similitud: ${match.similarity}%</small>
+                        </div>
+                    </div>
+                `).join('');
+                document.getElementById('matchesContainer').innerHTML = matchesHtml;
+            }
+
+            analysisResult.style.display = 'block';
+        }
+
+        function resetUpload() {
+            fileInput.value = '';
+            preview.src = '';
+            previewContainer.style.display = 'none';
+            uploadArea.style.display = 'block';
+            analysisResult.style.display = 'none';
+            errorContainer.innerHTML = '';
+        }
+
+        function showError(message) {
+            errorContainer.innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                    <i class="bi bi-exclamation-circle"></i> ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

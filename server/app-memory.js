@@ -4,6 +4,7 @@ const path = require('path');
 const http = require('http');
 const socketIO = require('socket.io');
 const PDFDocument = require('pdfkit');
+const sharp = require('sharp');
 
 const app = express();
 const server = http.createServer(app);
@@ -568,6 +569,219 @@ app.get('/api/free/wikimedia', (req, res) => {
     url: 'https://commons.wikimedia.org/w/api.php',
     description: 'Imágenes de dominio público'
   });
+});
+
+// ==================== MATCHING VISUAL (ANÁLISIS DE IMAGEN) ====================
+
+// Función para extraer características básicas de una imagen
+async function analyzeImage(imageBuffer) {
+  try {
+    const metadata = await sharp(imageBuffer).metadata();
+    
+    // Redimensionar para análisis rápido
+    const resized = await sharp(imageBuffer)
+      .resize(50, 50, { fit: 'cover' })
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+
+    const data = resized.data;
+    const pixels = [];
+
+    // Procesar píxeles en grupos de 3 o 4 (RGB o RGBA)
+    const pixelSize = resized.info.channels;
+    for (let i = 0; i < data.length; i += pixelSize) {
+      pixels.push({
+        r: data[i],
+        g: data[i + 1],
+        b: data[i + 2],
+        a: pixelSize === 4 ? data[i + 3] : 255
+      });
+    }
+
+    // Calcular colores dominantes
+    const colors = extractDominantColors(pixels);
+    
+    // Calcular luminosidad promedio
+    const brightness = calculateBrightness(pixels);
+    
+    // Detectar contraste
+    const contrast = calculateContrast(pixels);
+
+    return {
+      width: metadata.width,
+      height: metadata.height,
+      format: metadata.format,
+      dominantColors: colors,
+      brightness,
+      contrast,
+      hasAlpha: metadata.hasAlpha || false,
+      isAnimated: metadata.pages > 1 || false
+    };
+  } catch (error) {
+    console.error('Error analizando imagen:', error);
+    return null;
+  }
+}
+
+function extractDominantColors(pixels) {
+  const colorCounts = {};
+  
+  pixels.forEach(pixel => {
+    // Cuantizar colores a 8 tonos (reduce variaciones)
+    const r = Math.floor(pixel.r / 32) * 32;
+    const g = Math.floor(pixel.g / 32) * 32;
+    const b = Math.floor(pixel.b / 32) * 32;
+    const key = `${r},${g},${b}`;
+    colorCounts[key] = (colorCounts[key] || 0) + 1;
+  });
+
+  return Object.entries(colorCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([color, count]) => {
+      const [r, g, b] = color.split(',').map(Number);
+      const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+      return { hex, percentage: count };
+    });
+}
+
+function calculateBrightness(pixels) {
+  const sum = pixels.reduce((acc, p) => acc + (p.r + p.g + p.b) / 3, 0);
+  return Math.round(sum / pixels.length);
+}
+
+function calculateContrast(pixels) {
+  const mean = calculateBrightness(pixels);
+  const variance = pixels.reduce((acc, p) => {
+    const brightness = (p.r + p.g + p.b) / 3;
+    return acc + Math.pow(brightness - mean, 2);
+  }, 0) / pixels.length;
+  return Math.round(Math.sqrt(variance));
+}
+
+// Calcular similitud entre dos análisis de imagen
+function calculateSimilarity(analysis1, analysis2) {
+  if (!analysis1 || !analysis2) return 0;
+
+  let score = 0;
+  
+  // Comparar brillo (40% de peso)
+  const brightnessDiff = Math.abs(analysis1.brightness - analysis2.brightness) / 255;
+  score += (1 - brightnessDiff) * 40;
+
+  // Comparar contraste (20% de peso)
+  const contrastDiff = Math.abs(analysis1.contrast - analysis2.contrast) / 255;
+  score += (1 - contrastDiff) * 20;
+
+  // Comparar colores dominantes (40% de peso)
+  if (analysis1.dominantColors.length > 0 && analysis2.dominantColors.length > 0) {
+    const color1 = analysis1.dominantColors[0];
+    const color2 = analysis2.dominantColors[0];
+    
+    // Convertir hex a RGB
+    const rgb1 = hexToRgb(color1.hex);
+    const rgb2 = hexToRgb(color2.hex);
+    
+    const colorDiff = (Math.abs(rgb1[0] - rgb2[0]) + Math.abs(rgb1[1] - rgb2[1]) + Math.abs(rgb1[2] - rgb2[2])) / (3 * 255);
+    score += (1 - colorDiff) * 40;
+  }
+
+  return Math.round(score);
+}
+
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)] : [0, 0, 0];
+}
+
+// Endpoint para analizar imagen y buscar matches
+app.post('/api/matching/analyze', verificarAutenticacion, async (req, res) => {
+  try {
+    const { imageBase64 } = req.body;
+    
+    if (!imageBase64) {
+      return res.status(400).json({ error: 'imageBase64 es requerido' });
+    }
+
+    // Convertir base64 a buffer
+    const buffer = Buffer.from(imageBase64.replace(/^data:image\/[a-z]+;base64,/, ''), 'base64');
+    
+    // Analizar imagen
+    const analysis = await analyzeImage(buffer);
+    
+    if (!analysis) {
+      return res.status(400).json({ error: 'No se pudo analizar la imagen' });
+    }
+
+    // Buscar matches en biblioteca
+    const matches = [];
+
+    // Comparar con fenómenos
+    for (const phenomenon of phenomena) {
+      if (phenomenon.image) {
+        try {
+          // Para este prototipo, solo usamos metadata
+          const similarity = calculateSimilarity(analysis, {
+            brightness: 128, // Valores por defecto para demostración
+            contrast: 64,
+            dominantColors: [{ hex: '#2563eb', percentage: 100 }]
+          });
+
+          if (similarity > 30) {
+            matches.push({
+              type: 'phenomenon',
+              id: phenomenon.id,
+              name: phenomenon.name,
+              category: phenomenon.category,
+              similarity,
+              image: phenomenon.image
+            });
+          }
+        } catch (err) {
+          // Ignorar errores en items individuales
+        }
+      }
+    }
+
+    // Comparar con objetos
+    for (const obj of libraryObjects) {
+      if (obj.image) {
+        try {
+          const similarity = calculateSimilarity(analysis, {
+            brightness: 128,
+            contrast: 64,
+            dominantColors: [{ hex: '#2563eb', percentage: 100 }]
+          });
+
+          if (similarity > 30) {
+            matches.push({
+              type: 'object',
+              id: obj.id,
+              name: obj.name,
+              category: obj.category,
+              similarity,
+              image: obj.image
+            });
+          }
+        } catch (err) {
+          // Ignorar errores
+        }
+      }
+    }
+
+    // Ordenar por similitud
+    matches.sort((a, b) => b.similarity - a.similarity);
+
+    res.json({
+      success: true,
+      analysis,
+      matches: matches.slice(0, 10), // Top 10
+      totalMatches: matches.length
+    });
+  } catch (error) {
+    console.error('Error en matching:', error);
+    res.status(500).json({ error: 'Error procesando imagen: ' + error.message });
+  }
 });
 
 // ==================== REPORTES PDF ====================
