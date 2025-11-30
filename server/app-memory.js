@@ -268,17 +268,10 @@ app.get('/api/uploads', verificarAutenticacion, (req, res) => {
   } catch (error) {
     console.error('❌ Error al obtener uploads:', error.message);
     res.status(400).json({ error: 'Error al obtener uploads' });
-app.get('/api/uploads/:id', verificarAutenticacion, (req, res) => {
-  try {
-    const upload = uploads.find(u => u.id === parseInt(req.params.id) && u.userId === req.user.id);
-    if (!upload) return res.status(404).json({ error: 'No encontrado' });
-    res.json(upload);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
   }
 });
 
-// Endpoint para obtener estado de análisis (compatible con frontend)
+// Endpoint para obtener estado de análisis (DEBE estar ANTES de /api/uploads/:id)
 app.get('/api/analyze/:id/status', verificarAutenticacion, (req, res) => {
   try {
     const upload = uploads.find(u => u.id === parseInt(req.params.id) && u.userId === req.user.id);
@@ -302,9 +295,19 @@ app.get('/api/analyze/:id/status', verificarAutenticacion, (req, res) => {
         confidence: upload.analysis?.confidence || 0,
         description: upload.analysis?.details
       },
-      bestMatch: null, // Placeholder para matching con biblioteca
+      bestMatch: null,
       usedForTraining: false
     });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.get('/api/uploads/:id', verificarAutenticacion, (req, res) => {
+  try {
+    const upload = uploads.find(u => u.id === parseInt(req.params.id) && u.userId === req.user.id);
+    if (!upload) return res.status(404).json({ error: 'No encontrado' });
+    res.json(upload);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -318,9 +321,6 @@ app.delete('/api/uploads/:id', verificarAutenticacion, (req, res) => {
     res.json(deleted[0]);
   } catch (error) {
     res.status(400).json({ error: error.message });
-  }
-});
-
   }
 });
 
