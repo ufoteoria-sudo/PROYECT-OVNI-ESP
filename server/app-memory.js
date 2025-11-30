@@ -295,6 +295,41 @@ app.delete('/api/library/objects/:id', verificarAutenticacion, (req, res) => {
   res.json(deleted[0]);
 });
 
+// CRUD para fenómenos
+app.post('/api/library/phenomena', verificarAutenticacion, (req, res) => {
+  if (req.user.role !== 'admin' && !req.user.isAdmin) return res.status(403).json({ error: 'Solo admin' });
+  const { category, name, description } = req.body;
+  if (!category || !name) return res.status(400).json({ error: 'Requerido' });
+  const phenomenon = { 
+    id: Math.max(...phenomena.map(p => p.id || 0), 0) + 1, 
+    category, 
+    name, 
+    description, 
+    image: req.body.image || '',
+    rarity: req.body.rarity || 'media',
+    characteristics: req.body.characteristics || [],
+    createdBy: req.user.email
+  };
+  phenomena.push(phenomenon);
+  res.status(201).json(phenomenon);
+});
+
+app.put('/api/library/phenomena/:id', verificarAutenticacion, (req, res) => {
+  if (req.user.role !== 'admin' && !req.user.isAdmin) return res.status(403).json({ error: 'Solo admin' });
+  const phenomenon = phenomena.find(p => p.id === parseInt(req.params.id));
+  if (!phenomenon) return res.status(404).json({ error: 'No encontrado' });
+  Object.assign(phenomenon, req.body);
+  res.json(phenomenon);
+});
+
+app.delete('/api/library/phenomena/:id', verificarAutenticacion, (req, res) => {
+  if (req.user.role !== 'admin' && !req.user.isAdmin) return res.status(403).json({ error: 'Solo admin' });
+  const idx = phenomena.findIndex(p => p.id === parseInt(req.params.id));
+  if (idx === -1) return res.status(404).json({ error: 'No encontrado' });
+  const deleted = phenomena.splice(idx, 1);
+  res.json(deleted[0]);
+});
+
 
 // ==================== RUTAS USUARIOS ====================
 
