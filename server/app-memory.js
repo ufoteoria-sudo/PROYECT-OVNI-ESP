@@ -187,8 +187,60 @@ let libraryObjects = [
 ];
 
 let libraryCategories = [
-  { id: 1, name: 'Objetos Celestes', icon: '⭐' },
-  { id: 2, name: 'Satélites Artificiales', icon: '🛰️' }
+  { id: 1, name: 'Objetos Celestes', icon: '⭐', slug: 'objetos-celestes', type: 'object' },
+  { id: 2, name: 'Satélites Artificiales', icon: '🛰️', slug: 'satelites-artificiales', type: 'object' },
+  { id: 3, name: 'Globos Atmosféricos', icon: '🎈', slug: 'globos-atmosfericos', type: 'object' },
+  { id: 4, name: 'Fenómenos Ópticos', icon: '✨', slug: 'fenomenos-opticos', type: 'phenomenon' },
+  { id: 5, name: 'Aeronaves Convencionales', icon: '✈️', slug: 'aeronaves-convencionales', type: 'object' },
+  { id: 6, name: 'Drones', icon: '🚁', slug: 'drones', type: 'object' }
+];
+
+let phenomena = [
+  {
+    id: 1,
+    name: 'Aurora Boreal',
+    category: 'Fenómenos Ópticos',
+    description: 'Fenómeno luminoso natural que ocurre en zonas polares. Causado por la interacción del viento solar con la magnetosfera.',
+    image: 'https://via.placeholder.com/300x200?text=Aurora',
+    rarity: 'media',
+    characteristics: ['Luces verdes/azules', 'Movimiento ondulante', 'Noche polar']
+  },
+  {
+    id: 2,
+    name: 'Destello de Iridio',
+    category: 'Fenómenos Ópticos',
+    description: 'Flash brillante causado por la reflexión de la luz solar en los paneles solares de satélites Iridio. A menudo confundido con OVNIs.',
+    image: 'https://via.placeholder.com/300x200?text=Iridio',
+    rarity: 'baja',
+    characteristics: ['Destello repentino', 'Muy brillante', 'Corta duración']
+  },
+  {
+    id: 3,
+    name: 'Espejismo',
+    category: 'Fenómenos Ópticos',
+    description: 'Fenómeno óptico causado por la refracción de la luz en capas de aire de diferentes temperaturas.',
+    image: 'https://via.placeholder.com/300x200?text=Espejismo',
+    rarity: 'media',
+    characteristics: ['Distorsión visual', 'Efecto de agua', 'Temporal']
+  },
+  {
+    id: 4,
+    name: 'Halo Solar',
+    category: 'Fenómenos Ópticos',
+    description: 'Fenómeno óptico causado por la refracción de la luz solar en cristales de hielo en la atmósfera.',
+    image: 'https://via.placeholder.com/300x200?text=Halo',
+    rarity: 'baja',
+    characteristics: ['Anillo alrededor del sol', 'Colores débiles', 'Predecible']
+  },
+  {
+    id: 5,
+    name: 'Rayo Bola',
+    category: 'Fenómenos Ópticos',
+    description: 'Fenómeno luminoso raro asociado a tormentas eléctricas. Forma esférica de plasma.',
+    image: 'https://via.placeholder.com/300x200?text=Rayo+Bola',
+    rarity: 'alta',
+    characteristics: ['Esfera luminosa', 'Movimiento errático', 'Peligroso']
+  }
 ];
 
 let nextLibraryObjectId = 3;
@@ -223,7 +275,43 @@ app.get('/api/library/objects', (req, res) => {
 });
 
 app.get('/api/library/categories', (req, res) => {
-  res.json(libraryCategories);
+  res.json({
+    success: true,
+    data: libraryCategories
+  });
+});
+
+app.get('/api/categories', (req, res) => {
+  res.json({
+    success: true,
+    data: libraryCategories
+  });
+});
+
+app.get('/api/library/phenomena', (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 12;
+  const skip = (page - 1) * limit;
+  const category = req.query.category;
+  
+  let filtered = phenomena;
+  if (category && category !== 'fenomenos-opticos') {
+    filtered = phenomena.filter(p => p.category === category);
+  }
+  
+  const total = filtered.length;
+  const paginated = filtered.slice(skip, skip + limit);
+  
+  res.json({
+    success: true,
+    data: paginated,
+    pagination: {
+      page: page,
+      limit: limit,
+      total: total,
+      totalPages: Math.ceil(total / limit)
+    }
+  });
 });
 
 app.post('/api/library/objects', verificarAutenticacion, (req, res) => {
