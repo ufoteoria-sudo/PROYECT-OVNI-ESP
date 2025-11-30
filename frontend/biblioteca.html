@@ -921,11 +921,6 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="badge bg-secondary"><i class="bi bi-geo-alt"></i> ${phenomenon.location || 'Global'}</span>
                             <div class="btn-group btn-group-sm">
-                                ${currentUser && currentUser.role === 'admin' ? `
-                                    <button class="btn btn-outline-warning" onclick="editPhenomenon('${phenomenon._id}')" title="Editar fenómeno (solo admin)">
-                                        <i class="bi bi-pencil-square"></i> Editar
-                                    </button>
-                                ` : ''}
                                 <button class="btn btn-outline-info" onclick="showPhenomenonDetail('${phenomenon._id}')" title="Ver todos los detalles">
                                     <i class="bi bi-info-circle"></i> Detalles
                                 </button>
@@ -1062,9 +1057,6 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="badge bg-secondary"><i class="bi bi-calendar3"></i> ${object.frequency || 'N/A'}</span>
                             <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-primary" onclick="editObjectInline('${object._id}')" title="Editar objeto y gestionar imágenes">
-                                    <i class="bi bi-pencil-square"></i> Editar
-                                </button>
                                 <button class="btn btn-outline-info" onclick="showObjectDetail('${object._id}')" title="Ver todos los detalles">
                                     <i class="bi bi-info-circle"></i> Detalles
                                 </button>
@@ -1098,16 +1090,6 @@
         }
 
         // Editar fenómeno (redirige al panel de administración)
-        function editPhenomenon(id) {
-            if (!currentUser || currentUser.role !== 'admin') {
-                alert('Solo los administradores pueden editar fenómenos atmosféricos');
-                return;
-            }
-            
-            // Guardar el ID en localStorage para que el admin lo edite
-            localStorage.setItem('editPhenomenonId', id);
-            window.location.href = 'admin-biblioteca.html?tab=phenomena&edit=' + id;
-        }
 
         // Mostrar detalle de objeto
         async function showObjectDetail(id) {

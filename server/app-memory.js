@@ -112,78 +112,19 @@ app.get('/api/auth/me', verificarAutenticacion, (req, res) => {
 // ==================== BIBLIOTECA VISUAL ====================
 
 let libraryObjects = [
-  { 
-    id: 1, 
-    category: 'Objetos Celestes', 
-    name: 'Venus', 
-    description: 'El planeta Venus es el segundo planeta más cercano al Sol. A menudo se ve como la estrella de la mañana o la estrella de la tarde.', 
-    image: 'https://via.placeholder.com/300x200?text=Venus', 
-    characteristics: ['Brillante', 'Movimiento lento'], 
-    confidence: 0.95 
-  },
-  { 
-    id: 2, 
-    category: 'Satélites Artificiales', 
-    name: 'Estación Espacial Internacional (ISS)', 
-    description: 'La ISS es una estación espacial en órbita alrededor de la Tierra. Es uno de los objetos más brillantes del cielo nocturno.', 
-    image: 'https://via.placeholder.com/300x200?text=ISS', 
-    characteristics: ['Órbita regular', 'Muy brillante', 'Predecible'], 
-    confidence: 0.99 
-  },
-  { 
-    id: 3, 
-    category: 'Satélites Artificiales', 
-    name: 'Satélite de la Constelación Starlink', 
-    description: 'Los satélites Starlink de SpaceX forman cadenas visibles atravesando el cielo. Muchos avistamientos de OVNIs son en realidad estos satélites.', 
-    image: 'https://via.placeholder.com/300x200?text=Starlink', 
-    characteristics: ['En cadena', 'Movimiento rápido', 'Reciente'], 
-    confidence: 0.92 
-  },
-  { 
-    id: 4, 
-    category: 'Objetos Celestes', 
-    name: 'Júpiter', 
-    description: 'Júpiter es el planeta más grande del sistema solar. Es claramente visible a simple vista y a menudo se confunde con avistamientos OVNIs.', 
-    image: 'https://via.placeholder.com/300x200?text=Jupiter', 
-    characteristics: ['Brillante', 'Rojo/Anaranjado', 'Estático'], 
-    confidence: 0.94 
-  },
-  { 
-    id: 5, 
-    category: 'Globos Atmosféricos', 
-    name: 'Globo Meteorológico', 
-    description: 'Los globos meteorológicos se utilizan para obtener mediciones de temperatura, presión y humedad en la atmósfera superior.', 
-    image: 'https://via.placeholder.com/300x200?text=Globo', 
-    characteristics: ['Reflexión', 'Movimiento lento', 'Forma esférica'], 
-    confidence: 0.88 
-  },
-  { 
-    id: 6, 
-    category: 'Fenómenos Ópticos', 
-    name: 'Rayo Luz Solar Reflejada', 
-    description: 'La luz solar reflejada en nubes, cristales de hielo o la atmósfera pueden crear efectos visuales que simulan avistamientos OVNIs.', 
-    image: 'https://via.placeholder.com/300x200?text=Fenomeno', 
-    characteristics: ['Luz intensa', 'Temporal', 'Óptico'], 
-    confidence: 0.85 
-  },
-  { 
-    id: 7, 
-    category: 'Aeronaves Convencionales', 
-    name: 'Avión Comercial - Boeing 747', 
-    description: 'Los aviones comerciales grandes pueden parecer objetos extraños especialmente cuando se ven desde ciertos ángulos o durante la noche.', 
-    image: 'https://via.placeholder.com/300x200?text=Avion', 
-    characteristics: ['Luces posicionales', 'Sonido de motores', 'Trayectoria recta'], 
-    confidence: 0.96 
-  },
-  { 
-    id: 8, 
-    category: 'Drones', 
-    name: 'Dron Comercial DJI Phantom', 
-    description: 'Los drones son cada vez más comunes y responsables de muchos avistamientos de OVNIs en los últimos años.', 
-    image: 'https://via.placeholder.com/300x200?text=Dron', 
-    characteristics: ['Luces LED', 'Hover capability', 'Sonido distintivo'], 
-    confidence: 0.91 
-  }
+  // Objetos Celestes (12)
+  { id: 1, category: 'Objetos Celestes', name: 'Venus', description: 'El planeta Venus es el segundo planeta más cercano al Sol.', image: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=300&h=200&fit=crop', characteristics: ['Brillante', 'Movimiento lento'], confidence: 0.95 },
+  { id: 2, category: 'Satélites Artificiales', name: 'ISS', description: 'Estación Espacial Internacional. Uno de los objetos más brillantes del cielo.', image: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=200&fit=crop', characteristics: ['Órbita regular', 'Muy brillante', 'Predecible'], confidence: 0.99 },
+  { id: 3, category: 'Satélites Artificiales', name: 'Starlink', description: 'Satélites Starlink de SpaceX. A menudo confundidos con OVNIs.', image: 'https://images.unsplash.com/photo-1444080748397-f442aa95c3e5?w=300&h=200&fit=crop', characteristics: ['En cadena', 'Movimiento rápido', 'Reciente'], confidence: 0.92 },
+  { id: 4, category: 'Objetos Celestes', name: 'Júpiter', description: 'El planeta más grande del sistema solar. Visible a simple vista.', image: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=300&h=200&fit=crop', characteristics: ['Brillante', 'Rojo/Anaranjado', 'Estático'], confidence: 0.94 },
+  { id: 5, category: 'Globos Atmosféricos', name: 'Globo Meteorológico', description: 'Globos utilizados para mediciones de temperatura y presión atmosférica.', image: 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=300&h=200&fit=crop', characteristics: ['Reflexión', 'Movimiento lento', 'Forma esférica'], confidence: 0.88 },
+  { id: 6, category: 'Fenómenos Ópticos', name: 'Luz Solar Reflejada', description: 'La luz solar reflejada en nubes crea efectos visuales engañosos.', image: 'https://images.unsplash.com/photo-1444080748397-f442aa95c3e5?w=300&h=200&fit=crop', characteristics: ['Luz intensa', 'Temporal', 'Óptico'], confidence: 0.85 },
+  { id: 7, category: 'Aeronaves Convencionales', name: 'Boeing 747', description: 'Aviones comerciales grandes vistos desde ciertos ángulos.', image: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=200&fit=crop', characteristics: ['Luces posicionales', 'Sonido de motores', 'Trayectoria recta'], confidence: 0.96 },
+  { id: 8, category: 'Drones', name: 'Dron DJI Phantom', description: 'Drones comerciales cada vez más comunes responsables de avistamientos.', image: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=300&h=200&fit=crop', characteristics: ['Luces LED', 'Hover capability', 'Sonido distintivo'], confidence: 0.91 },
+  { id: 9, category: 'Objetos Celestes', name: 'Mercurio', description: 'Planeta rocoso más cercano al Sol. Visible al atardecer.', image: 'https://images.unsplash.com/photo-1444080748397-f442aa95c3e5?w=300&h=200&fit=crop', characteristics: ['Débil', 'Horizonte', 'Rápido'], confidence: 0.90 },
+  { id: 10, category: 'Satélites Artificiales', name: 'Satélite Meteorológico', description: 'Satélites geoestacionarios para monitoreo meteorológico.', image: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=200&fit=crop', characteristics: ['Órbita fija', 'Lento', 'Predecible'], confidence: 0.93 },
+  { id: 11, category: 'Globos Atmosféricos', name: 'Globo Estratosférico', description: 'Globos científicos que alcanzan la estratosfera.', image: 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=300&h=200&fit=crop', characteristics: ['Altitud extrema', 'Reflectivo', 'Lentitud extrema'], confidence: 0.87 },
+  { id: 12, category: 'Drones', name: 'Dron Militar', description: 'Drones no tripulados utilizados en operaciones militares.', image: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=300&h=200&fit=crop', characteristics: ['Silencioso', 'Noche', 'Maniobras'], confidence: 0.85 }
 ];
 
 let libraryCategories = [
@@ -196,51 +137,36 @@ let libraryCategories = [
 ];
 
 let phenomena = [
-  {
-    id: 1,
-    name: 'Aurora Boreal',
-    category: 'Fenómenos Ópticos',
-    description: 'Fenómeno luminoso natural que ocurre en zonas polares. Causado por la interacción del viento solar con la magnetosfera.',
-    image: 'https://via.placeholder.com/300x200?text=Aurora',
-    rarity: 'media',
-    characteristics: ['Luces verdes/azules', 'Movimiento ondulante', 'Noche polar']
-  },
-  {
-    id: 2,
-    name: 'Destello de Iridio',
-    category: 'Fenómenos Ópticos',
-    description: 'Flash brillante causado por la reflexión de la luz solar en los paneles solares de satélites Iridio. A menudo confundido con OVNIs.',
-    image: 'https://via.placeholder.com/300x200?text=Iridio',
-    rarity: 'baja',
-    characteristics: ['Destello repentino', 'Muy brillante', 'Corta duración']
-  },
-  {
-    id: 3,
-    name: 'Espejismo',
-    category: 'Fenómenos Ópticos',
-    description: 'Fenómeno óptico causado por la refracción de la luz en capas de aire de diferentes temperaturas.',
-    image: 'https://via.placeholder.com/300x200?text=Espejismo',
-    rarity: 'media',
-    characteristics: ['Distorsión visual', 'Efecto de agua', 'Temporal']
-  },
-  {
-    id: 4,
-    name: 'Halo Solar',
-    category: 'Fenómenos Ópticos',
-    description: 'Fenómeno óptico causado por la refracción de la luz solar en cristales de hielo en la atmósfera.',
-    image: 'https://via.placeholder.com/300x200?text=Halo',
-    rarity: 'baja',
-    characteristics: ['Anillo alrededor del sol', 'Colores débiles', 'Predecible']
-  },
-  {
-    id: 5,
-    name: 'Rayo Bola',
-    category: 'Fenómenos Ópticos',
-    description: 'Fenómeno luminoso raro asociado a tormentas eléctricas. Forma esférica de plasma.',
-    image: 'https://via.placeholder.com/300x200?text=Rayo+Bola',
-    rarity: 'alta',
-    characteristics: ['Esfera luminosa', 'Movimiento errático', 'Peligroso']
-  }
+  // Fenómenos Ópticos (8)
+  { id: 1, name: 'Aurora Boreal', category: 'Fenómenos Ópticos', description: 'Fenómeno luminoso natural en zonas polares causado por el viento solar.', image: 'https://images.unsplash.com/photo-1444080748397-f442aa95c3e5?w=300&h=200&fit=crop', rarity: 'media', characteristics: ['Luces verdes/azules', 'Movimiento ondulante', 'Noche polar'] },
+  { id: 2, name: 'Destello de Iridio', category: 'Fenómenos Ópticos', description: 'Flash brillante de satélites Iridio. A menudo confundido con OVNIs.', image: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=300&h=200&fit=crop', rarity: 'baja', characteristics: ['Destello repentino', 'Muy brillante', 'Corta duración'] },
+  { id: 3, name: 'Espejismo', category: 'Fenómenos Ópticos', description: 'Refracción de luz en capas de aire de diferentes temperaturas.', image: 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=300&h=200&fit=crop', rarity: 'media', characteristics: ['Distorsión visual', 'Efecto de agua', 'Temporal'] },
+  { id: 4, name: 'Halo Solar', category: 'Fenómenos Ópticos', description: 'Fenómeno óptico por refracción en cristales de hielo atmosféricos.', image: 'https://images.unsplash.com/photo-1444570053456-71e66804b5e7?w=300&h=200&fit=crop', rarity: 'baja', characteristics: ['Anillo alrededor del sol', 'Colores débiles', 'Predecible'] },
+  { id: 5, name: 'Rayo Bola', category: 'Fenómenos Ópticos', description: 'Fenómeno luminoso raro asociado a tormentas eléctricas.', image: 'https://images.unsplash.com/photo-1534274988757-a28bf1ad0e1f?w=300&h=200&fit=crop', rarity: 'alta', characteristics: ['Esfera luminosa', 'Movimiento errático', 'Peligroso'] },
+  { id: 6, name: 'Coronas Luminosas', category: 'Fenómenos Ópticos', description: 'Halos alrededor de fuentes de luz causados por niebla o polvo.', image: 'https://images.unsplash.com/photo-1444080748397-f442aa95c3e5?w=300&h=200&fit=crop', rarity: 'media', characteristics: ['Anillo de luz', 'Coloreado', 'Común en montañas'] },
+  { id: 7, name: 'Gloria', category: 'Fenómenos Ópticos', description: 'Halo de luz alrededor de la sombra del observador.', image: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=200&fit=crop', rarity: 'baja', characteristics: ['Anillo concéntrico', 'Alrededor de sombra', 'Altitud'] },
+  { id: 8, name: 'Brocken Spectre', category: 'Fenómenos Ópticos', description: 'Proyección fantasmal de la sombra del observador sobre nubes.', image: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=200&fit=crop', rarity: 'media', characteristics: ['Sombra amplificada', 'Sobre nubes', 'Espectacular'] },
+  
+  // Fenómenos Meteorológicos (6)
+  { id: 9, name: 'Nube Lenticular', category: 'Fenómenos Meteorológicos', description: 'Nube en forma de OVNI causada por aire que fluye sobre montañas.', image: 'https://images.unsplash.com/photo-1518639298871-25f0e2fb3db2?w=300&h=200&fit=crop', rarity: 'baja', characteristics: ['Forma de disco', 'Estacionaria', 'Cerca de montañas'] },
+  { id: 10, name: 'Nube Asperatus', category: 'Fenómenos Meteorológicos', description: 'Formación de nubes onduladas y turbulentas muy inusual.', image: 'https://images.unsplash.com/photo-1533531173927-3a36e0be4217?w=300&h=200&fit=crop', rarity: 'alta', characteristics: ['Ondas dramáticas', 'Cielo turbulento', 'Ominosa'] },
+  { id: 11, name: 'Nube Mammatus', category: 'Fenómenos Meteorológicos', description: 'Protuberancias en forma de bolsas bajo las nubes de tormenta.', image: 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=300&h=200&fit=crop', rarity: 'media', characteristics: ['Bolsas colgantes', 'Después de tormenta', 'Fantasmal'] },
+  { id: 12, name: 'Nube Catarata', category: 'Fenómenos Meteorológicos', description: 'Nube que parece caer del cielo pero no llueve.', image: 'https://images.unsplash.com/photo-1533531173927-3a36e0be4217?w=300&h=200&fit=crop', rarity: 'media', characteristics: ['Caída vertical', 'Precip. virga', 'Ilusoria'] },
+  { id: 13, name: 'Virga', category: 'Fenómenos Meteorológicos', description: 'Precipitación que no llega al suelo evaporándose en el aire.', image: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=200&fit=crop', rarity: 'media', characteristics: ['Lluvia fantasma', 'Diagonal', 'Evaporación'] },
+  { id: 14, name: 'Pilares de Luz', category: 'Fenómenos Meteorológicos', description: 'Columnas verticales de luz causadas por reflexión en cristales de hielo.', image: 'https://images.unsplash.com/photo-1444080748397-f442aa95c3e5?w=300&h=200&fit=crop', rarity: 'baja', characteristics: ['Vertical', 'Multicolor', 'Raro'] },
+  
+  // Fenómenos Luminosos (5)
+  { id: 15, name: 'Luz Volcánica', category: 'Fenómenos Luminosos', description: 'Gases ionizados sobre volcanes activos crean halos luminosos.', image: 'https://images.unsplash.com/photo-1464207687429-7505649dae38?w=300&h=200&fit=crop', rarity: 'baja', characteristics: ['Azul/púrpura', 'Sobre volcán', 'Noche'] },
+  { id: 16, name: 'Luminiscencia Marina', category: 'Fenómenos Luminosos', description: 'Bioluminiscencia en océanos causada por organismos microscópicos.', image: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=300&h=200&fit=crop', rarity: 'media', characteristics: ['Azul/verde', 'Movimiento', 'Océano'] },
+  { id: 17, name: 'Rayos Positivos', category: 'Fenómenos Luminosos', description: 'Rayos rojos/azules de tormenta desde altitud de crucero de aviones.', image: 'https://images.unsplash.com/photo-1534274988757-a28bf1ad0e1f?w=300&h=200&fit=crop', rarity: 'baja', characteristics: ['Rojo/azul', 'Arriba de tormenta', 'Raro'] },
+  { id: 18, name: 'Sprites', category: 'Fenómenos Luminosos', description: 'Destellos transitorios en mesosfera causados por rayos intensos.', image: 'https://images.unsplash.com/photo-1444080748397-f442aa95c3e5?w=300&h=200&fit=crop', rarity: 'alta', characteristics: ['Rojo/azul', 'Mesosfera', 'Ultrarápido'] },
+  { id: 19, name: 'Cucarachas Azules', category: 'Fenómenos Luminosos', description: 'Fulguración azul rara desde líneas de alta tensión.', image: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=300&h=200&fit=crop', rarity: 'alta', characteristics: ['Azul', 'Líneas eléctricas', 'Muy raro'] },
+  
+  // Fenómenos Atmosféricos (4)
+  { id: 20, name: 'Rayo Verde', category: 'Fenómenos Atmosféricos', description: 'Destello verde raro visto en el horizonte durante puesta de sol.', image: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=200&fit=crop', rarity: 'alta', characteristics: ['Verde', 'Horizonte', 'Efímero'] },
+  { id: 21, name: 'Scintilación Estelar', category: 'Fenómenos Atmosféricos', description: 'Parpadeo de estrellas por turbulencia atmosférica.', image: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=300&h=200&fit=crop', rarity: 'baja', characteristics: ['Parpadeo', 'Estrellas', 'Común'] },
+  { id: 22, name: 'Espejismo Inferior', category: 'Fenómenos Atmosféricos', description: 'Imagen invertida del cielo vista en superficies calientes.', image: 'https://images.unsplash.com/photo-1446776953081-d282a0f896e2?w=300&h=200&fit=crop', rarity: 'media', characteristics: ['Inversión', 'Calor', 'Ilusoria'] },
+  { id: 23, name: 'Crepúsculo Profundo', category: 'Fenómenos Atmosféricos', description: 'Fenómeno de iluminación crepuscular desde altitud estratosférica.', image: 'https://images.unsplash.com/photo-1444080748397-f442aa95c3e5?w=300&h=200&fit=crop', rarity: 'baja', characteristics: ['Violeta', 'Atardecer', 'Altitud'] }
 ];
 
 let nextLibraryObjectId = 3;
@@ -295,7 +221,7 @@ app.get('/api/library/phenomena', (req, res) => {
   const category = req.query.category;
   
   let filtered = phenomena;
-  if (category && category !== 'fenomenos-opticos') {
+  if (category) {
     filtered = phenomena.filter(p => p.category === category);
   }
   
@@ -312,6 +238,22 @@ app.get('/api/library/phenomena', (req, res) => {
       totalPages: Math.ceil(total / limit)
     }
   });
+});
+
+app.get('/api/library/phenomena/:id', (req, res) => {
+  const phenomenon = phenomena.find(p => p.id === parseInt(req.params.id));
+  if (!phenomenon) {
+    return res.status(404).json({ success: false, error: 'Fenómeno no encontrado' });
+  }
+  res.json({ success: true, data: phenomenon });
+});
+
+app.get('/api/library/objects/:id', (req, res) => {
+  const obj = libraryObjects.find(o => o.id === parseInt(req.params.id));
+  if (!obj) {
+    return res.status(404).json({ success: false, error: 'Objeto no encontrado' });
+  }
+  res.json({ success: true, data: obj });
 });
 
 app.post('/api/library/objects', verificarAutenticacion, (req, res) => {

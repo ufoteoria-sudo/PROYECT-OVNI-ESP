@@ -45,129 +45,6 @@
             50% { opacity: 1; }
         }
 
-        /* Platillo Volante Animado */
-        .ufo-container {
-            position: fixed;
-            width: 150px;
-            height: 80px;
-            animation: floatUFO 20s infinite ease-in-out;
-            z-index: 100;
-        }
-
-        @keyframes floatUFO {
-            0% {
-                top: -100px;
-                left: -150px;
-                transform: rotate(-10deg);
-            }
-            25% {
-                top: 20%;
-                left: 80%;
-                transform: rotate(5deg);
-            }
-            50% {
-                top: 70%;
-                left: 90%;
-                transform: rotate(-5deg);
-            }
-            75% {
-                top: 50%;
-                left: 10%;
-                transform: rotate(8deg);
-            }
-            100% {
-                top: -100px;
-                left: -150px;
-                transform: rotate(-10deg);
-            }
-        }
-
-        .ufo {
-            position: relative;
-            width: 100%;
-            height: 100%;
-        }
-
-        .ufo-top {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 40px;
-            height: 25px;
-            background: linear-gradient(to bottom, #00d4ff 0%, #0099cc 100%);
-            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
-        }
-
-        .ufo-bottom {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 120px;
-            height: 30px;
-            background: linear-gradient(to bottom, #c0c0c0 0%, #808080 100%);
-            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        .ufo-lights {
-            position: absolute;
-            bottom: 18px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            height: 8px;
-            display: flex;
-            justify-content: space-around;
-        }
-
-        .ufo-light {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            animation: blinkLights 1s infinite;
-        }
-
-        .ufo-light:nth-child(1) {
-            background: #ff0000;
-            animation-delay: 0s;
-        }
-
-        .ufo-light:nth-child(2) {
-            background: #00ff00;
-            animation-delay: 0.33s;
-        }
-
-        .ufo-light:nth-child(3) {
-            background: #0000ff;
-            animation-delay: 0.66s;
-        }
-
-        @keyframes blinkLights {
-            0%, 100% { opacity: 0.3; box-shadow: 0 0 5px currentColor; }
-            50% { opacity: 1; box-shadow: 0 0 20px currentColor; }
-        }
-
-        .light-beam {
-            position: absolute;
-            bottom: -50px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 60px solid transparent;
-            border-right: 60px solid transparent;
-            border-top: 50px solid rgba(255, 255, 100, 0.3);
-            animation: beamPulse 2s infinite;
-        }
-
-        @keyframes beamPulse {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 0.6; }
-        }
-
         .login-container {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
@@ -247,31 +124,12 @@
                 margin: 20px;
                 padding: 30px 20px;
             }
-
-            .ufo-container {
-                width: 100px;
-                height: 60px;
-            }
         }
     </style>
 </head>
 <body>
     <!-- Estrellas de fondo -->
     <div class="stars" id="stars"></div>
-
-    <!-- Platillo Volante Animado -->
-    <div class="ufo-container">
-        <div class="ufo">
-            <div class="ufo-top"></div>
-            <div class="ufo-bottom"></div>
-            <div class="ufo-lights">
-                <div class="ufo-light"></div>
-                <div class="ufo-light"></div>
-                <div class="ufo-light"></div>
-            </div>
-            <div class="light-beam"></div>
-        </div>
-    </div>
 
     <div class="login-container">
         <div class="logo">
