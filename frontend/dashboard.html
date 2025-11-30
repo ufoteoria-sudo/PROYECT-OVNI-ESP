@@ -3647,7 +3647,10 @@
                 console.log('✅ Usuario es admin - mostrando elementos');
                 adminElements.forEach(el => {
                     console.log('  Mostrando elemento:', el);
-                    el.style.removeProperty('display');
+                    // Remover el atributo style completamente para que se use CSS
+                    el.removeAttribute('style');
+                    // O alternativamente, forzar display block
+                    el.style.display = 'block';
                 });
             } else {
                 console.log('❌ Usuario NO es admin - ocultando elementos');
