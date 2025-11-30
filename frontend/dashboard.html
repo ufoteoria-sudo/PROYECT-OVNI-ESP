@@ -1335,6 +1335,17 @@
             font-weight: 600;
             font-size: 0.9rem;
         }
+
+        /* ===== REGLAS DEFENSIVAS PARA SECCIONES ===== */
+        /* Por defecto todas las secciones están ocultas */
+        [id$="Section"] {
+            display: none !important;
+        }
+
+        /* Solo dashboard visible inicialmente */
+        #dashboardSection {
+            display: block !important;
+        }
     </style>
 </head>
 <body>
@@ -7983,17 +7994,47 @@ function generateForensicSection(forensic) {
 
         // ==================== FIN CONFIGURACIÓN ====================
 
+        // Función para forzar la ocultación de todas las secciones excepto dashboard
+        function initializeDashboardOnly() {
+            // Ocultar TODAS las secciones primero
+            document.querySelectorAll('[id$="Section"]').forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            // Mostrar solo dashboard
+            const dashboardSection = document.getElementById('dashboardSection');
+            if (dashboardSection) {
+                dashboardSection.style.display = 'block';
+                loadDashboardStats();
+            }
+            
+            // Forzar ocultación de secciones específicas que podrían aparecer
+            const trainingSection = document.getElementById('trainingSection');
+            const adminTrainingSection = document.getElementById('adminTrainingSection');
+            if (trainingSection) trainingSection.style.display = 'none';
+            if (adminTrainingSection) adminTrainingSection.style.display = 'none';
+        }
+
         // Inicializar
         initializeWebSocket(); // Conectar WebSocket
         checkAuth();
         loadNotificationCount();
         loadSiteConfigs(); // Cargar configuraciones del sitio
         
-        // Mostrar dashboard por defecto
+        // Mostrar dashboard por defecto - con múltiples mecanismos de garantía
+        if (document.readyState === 'loading') {
+            // DOM aún cargando
+            document.addEventListener('DOMContentLoaded', () => {
+                initializeDashboardOnly();
+            });
+        } else {
+            // DOM ya cargó
+            initializeDashboardOnly();
+        }
+        
+        // También en window.load por si acaso
         window.addEventListener('load', () => {
-            setTimeout(() => {
-                showSection('dashboard');
-            }, 500);
+            setTimeout(initializeDashboardOnly, 100);
         });
     </script>
 
