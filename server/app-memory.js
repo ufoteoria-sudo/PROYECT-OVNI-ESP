@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const http = require('http');
 const socketIO = require('socket.io');
+const PDFDocument = require('pdfkit');
 
 const app = express();
 const server = http.createServer(app);
@@ -568,6 +569,146 @@ app.get('/api/free/wikimedia', (req, res) => {
     description: 'Imágenes de dominio público'
   });
 });
+
+// ==================== REPORTES PDF ====================
+
+app.post('/api/reports/generate-pdf', verificarAutenticacion, (req, res) => {
+  const { title, type, data } = req.body;
+  
+  if (!title || !type) {
+    return res.status(400).json({ error: 'title y type son requeridos' });
+  }
+
+  try {
+    const doc = new PDFDocument({ margin: 50, size: 'A4' });
+    
+    // Headers
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${title.replace(/\s+/g, '_')}_${Date.now()}.pdf"`);
+    
+    doc.pipe(res);
+
+    // Título
+    doc.fontSize(24).font('Helvetica-Bold').text(title, { align: 'center' });
+    doc.fontSize(10).fillColor('#999').text(`Generado el ${new Date().toLocaleString('es-ES')}`, { align: 'center' });
+    doc.moveDown();
+
+    // Tipo de reporte
+    doc.fontSize(12).fillColor('#000').text(`Tipo: ${type}`, { underline: true });
+    doc.moveDown();
+
+    // Contenido según tipo
+    if (type === 'library-object' && data) {
+      generateLibraryObjectPDF(doc, data);
+    } else if (type === 'library-phenomenon' && data) {
+      generatePhenomenonPDF(doc, data);
+    } else if (type === 'analysis-summary' && data) {
+      generateAnalysisSummaryPDF(doc, data);
+    } else {
+      doc.text('Tipo de reporte no reconocido');
+    }
+
+    // Footer
+    doc.fontSize(9).fillColor('#999').text('© 2025 UAP Analysis System', { align: 'center' });
+
+    doc.end();
+  } catch (error) {
+    console.error('Error generando PDF:', error);
+    res.status(500).json({ error: 'Error generando PDF: ' + error.message });
+  }
+});
+
+function generateLibraryObjectPDF(doc, obj) {
+  // Información del objeto
+  doc.fontSize(14).fillColor('#000').text(obj.name || 'Objeto sin nombre', { underline: true });
+  doc.fontSize(10).fillColor('#333');
+  
+  doc.text(`Categoría: ${obj.category || 'No especificada'}`);
+  doc.text(`Confianza: ${((obj.confidence || 0) * 100).toFixed(1)}%`);
+  
+  doc.moveDown();
+  
+  doc.fontSize(12).font('Helvetica-Bold').text('Descripción');
+  doc.fontSize(10).font('Helvetica').fillColor('#333').text(obj.description || 'Sin descripción', {
+    align: 'left',
+    width: 450,
+    height: 100,
+    ellipsis: true
+  });
+  
+  doc.moveDown();
+  
+  if (obj.characteristics && obj.characteristics.length > 0) {
+    doc.fontSize(12).font('Helvetica-Bold').text('Características');
+    doc.fontSize(10).font('Helvetica').fillColor('#555');
+    obj.characteristics.forEach(char => {
+      doc.text(`• ${char}`);
+    });
+  }
+  
+  doc.moveDown();
+  doc.addPage();
+}
+
+function generatePhenomenonPDF(doc, phen) {
+  // Información del fenómeno
+  doc.fontSize(14).fillColor('#000').text(phen.name || 'Fenómeno sin nombre', { underline: true });
+  doc.fontSize(10).fillColor('#333');
+  
+  doc.text(`Categoría: ${phen.category || 'No especificada'}`);
+  doc.text(`Rareza: ${phen.rarity || 'Desconocida'}`);
+  
+  doc.moveDown();
+  
+  doc.fontSize(12).font('Helvetica-Bold').text('Descripción');
+  doc.fontSize(10).font('Helvetica').fillColor('#333').text(phen.description || 'Sin descripción', {
+    align: 'left',
+    width: 450,
+    height: 100,
+    ellipsis: true
+  });
+  
+  doc.moveDown();
+  
+  if (phen.characteristics && phen.characteristics.length > 0) {
+    doc.fontSize(12).font('Helvetica-Bold').text('Características');
+    doc.fontSize(10).font('Helvetica').fillColor('#555');
+    phen.characteristics.forEach(char => {
+      doc.text(`• ${char}`);
+    });
+  }
+  
+  doc.moveDown();
+  doc.addPage();
+}
+
+function generateAnalysisSummaryPDF(doc, data) {
+  // Resumen de análisis
+  doc.fontSize(14).fillColor('#000').text('Resumen de Análisis', { underline: true });
+  doc.moveDown();
+  
+  if (data.summary) {
+    doc.fontSize(10).fillColor('#333').text(data.summary, {
+      align: 'left',
+      width: 450,
+      ellipsis: true
+    });
+  }
+  
+  if (data.layers && Array.isArray(data.layers)) {
+    doc.moveDown();
+    doc.fontSize(12).font('Helvetica-Bold').text('Capas de Análisis');
+    doc.fontSize(10).font('Helvetica').fillColor('#333');
+    
+    data.layers.forEach((layer, idx) => {
+      doc.fillColor('#2563eb').text(`${idx + 1}. ${layer.name || `Capa ${idx + 1}`}`);
+      doc.fillColor('#666').text(`   ${layer.description || 'Sin descripción'}`, { indent: 20 });
+    });
+  }
+  
+  doc.moveDown();
+  doc.addPage();
+}
 
 // ==================== NOTIFICACIONES ====================
 

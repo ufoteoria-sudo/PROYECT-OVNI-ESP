@@ -329,6 +329,12 @@
                 <div class="modal-body" id="detailModalBody">
                     <!-- Contenido dinámico -->
                 </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" id="downloadPdfBtn" onclick="downloadCurrentDetailPDF()">
+                        <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -512,6 +518,9 @@
             console.log('📡 Fenómeno eliminado:', event.data);
             loadCategoryContent(document.querySelector('.nav-link.active')?.id?.replace('-tab', '') || 'fenomenos-opticos');
         });
+        
+        // 📄 Variable para almacenar objeto actual en modal (para descargar PDF)
+        let currentDetailItem = null;
         
         
         let currentPhenomenaPage = 1;
@@ -1253,6 +1262,7 @@
 
                 if (data.success) {
                     const phenomenon = data.data;
+                    currentDetailItem = phenomenon; // Guardar para PDF
                     document.getElementById('detailModalTitle').textContent = phenomenon.name;
                     document.getElementById('detailModalBody').innerHTML = generatePhenomenonDetail(phenomenon);
                     new bootstrap.Modal(document.getElementById('detailModal')).show();
@@ -1276,6 +1286,7 @@
 
                 if (data.success) {
                     const object = data.data;
+                    currentDetailItem = object; // Guardar para PDF
                     document.getElementById('detailModalTitle').textContent = object.name;
                     document.getElementById('detailModalBody').innerHTML = generateObjectDetail(object);
                     new bootstrap.Modal(document.getElementById('detailModal')).show();
@@ -1810,6 +1821,53 @@
                 msgDiv.className = 'small-msg text-danger';
             }
         });
+
+        // 📄 Descargar detalle en PDF
+        async function downloadCurrentDetailPDF() {
+            if (!currentDetailItem) {
+                alert('No hay elemento seleccionado');
+                return;
+            }
+
+            const token = localStorage.getItem('token');
+            const isPhenom = currentDetailItem.rarity !== undefined; // Fenómenos tienen "rarity"
+            const type = isPhenom ? 'library-phenomenon' : 'library-object';
+
+            try {
+                const response = await fetch(`${API_URL}/api/reports/generate-pdf`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        title: currentDetailItem.name,
+                        type: type,
+                        data: currentDetailItem
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error generando PDF');
+                }
+
+                // Descargar archivo
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${currentDetailItem.name.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(link);
+
+                console.log('✅ PDF descargado:', link.download);
+            } catch (error) {
+                console.error('Error descargando PDF:', error);
+                alert('❌ Error al descargar PDF: ' + error.message);
+            }
+        }
     </script>
 </body>
 </html>
