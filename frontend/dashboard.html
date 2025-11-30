@@ -2753,11 +2753,134 @@
                     </div>
 
                     <!-- Lista de Reportes -->
-                    <div class="card p-4">
+                    <div class="card p-4 mb-4">
                         <div id="reportsListContainer">
                             <div class="text-center text-muted">
                                 <i class="bi bi-hourglass-split"></i> Cargando reportes...
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Configuración de Pesos de Confianza -->
+                    <div class="card p-4">
+                        <div class="card-header border-bottom pb-3">
+                            <h5 class="mb-0">
+                                <i class="bi bi-gear"></i> Modelo de Confianza - Ajustar Pesos
+                            </h5>
+                            <small class="text-muted d-block mt-2">
+                                Configuración de Capas de Análisis
+                            </small>
+                        </div>
+                        <div class="card-body pt-4">
+                            <p class="text-muted small mb-4">
+                                Ajusta los pesos porcentuales para cada capa. El total debe ser 100%. Estos pesos se utilizarán para calcular la confianza coordinada de cada análisis.
+                            </p>
+
+                            <h6 class="mb-4">Pesos de Confianza</h6>
+
+                            <form id="confidenceWeightsForm">
+                                <!-- 1. Entrada Manual -->
+                                <div class="row align-items-center mb-4">
+                                    <div class="col-md-2">
+                                        <label class="form-label fw-bold">
+                                            <i class="bi bi-pencil-square"></i> 1. Entrada Manual (Usuario)
+                                        </label>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="input-group">
+                                            <input type="number" class="form-control confidence-weight" id="weight_manual" 
+                                                   min="0" max="100" value="25" data-label="Entrada Manual">
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <small class="text-muted">
+                                            <i class="bi bi-info-circle"></i> MANUAL: Contexto e información ingresada por el usuario (ubicación, hora, testigos, descripción).
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <!-- 2. EXIF Data -->
+                                <div class="row align-items-center mb-4">
+                                    <div class="col-md-2">
+                                        <label class="form-label fw-bold">
+                                            <i class="bi bi-image"></i> 2. Datos EXIF (Automático)
+                                        </label>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="input-group">
+                                            <input type="number" class="form-control confidence-weight" id="weight_exif" 
+                                                   min="0" max="100" value="25" data-label="EXIF">
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <small class="text-muted">
+                                            <i class="bi bi-info-circle"></i> AUTOMÁTICO: Extraído de la imagen (GPS, timestamp, modelo cámara, ISO, apertura, focal).
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <!-- 3. AI Classification -->
+                                <div class="row align-items-center mb-4">
+                                    <div class="col-md-2">
+                                        <label class="form-label fw-bold">
+                                            <i class="bi bi-robot"></i> 3. Clasificación IA (Automático)
+                                        </label>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="input-group">
+                                            <input type="number" class="form-control confidence-weight" id="weight_ai" 
+                                                   min="0" max="100" value="25" data-label="IA">
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <small class="text-muted">
+                                            <i class="bi bi-info-circle"></i> AUTOMÁTICO: Clasificación ML de la imagen (Globo, Drone, Ave, etc.).
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <!-- 4. Library Matching -->
+                                <div class="row align-items-center mb-4">
+                                    <div class="col-md-2">
+                                        <label class="form-label fw-bold">
+                                            <i class="bi bi-book"></i> 4. Matching Biblioteca (Automático)
+                                        </label>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="input-group">
+                                            <input type="number" class="form-control confidence-weight" id="weight_library" 
+                                                   min="0" max="100" value="25" data-label="Biblioteca">
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <small class="text-muted">
+                                            <i class="bi bi-info-circle"></i> AUTOMÁTICO: Coincidencia visual con objetos de la biblioteca.
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <!-- Total Validator -->
+                                <div class="alert alert-info mb-4">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-6">
+                                            <strong>Total:</strong> <span id="totalWeights">100</span>% 
+                                            <span id="validationBadge" class="badge bg-success ms-2">✓ Válido</span>
+                                        </div>
+                                        <div class="col-md-6 text-end">
+                                            <button type="button" class="btn btn-sm btn-primary" onclick="saveConfidenceWeights()">
+                                                <i class="bi bi-save"></i> Guardar Configuración
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-secondary" onclick="resetConfidenceWeights()">
+                                                <i class="bi bi-arrow-counterclockwise"></i> Restablecer
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -5928,6 +6051,122 @@ function generateForensicSection(forensic) {
             document.getElementById('searchReports').value = '';
             loadReports();
         }
+
+        // ========== FUNCIONES DE PESOS DE CONFIANZA ==========
+
+        // Inicializar listeners para los campos de peso
+        document.addEventListener('DOMContentLoaded', () => {
+            // Agregar listeners a los inputs de peso
+            document.querySelectorAll('.confidence-weight').forEach(input => {
+                input.addEventListener('change', validateAndUpdateWeights);
+                input.addEventListener('input', validateAndUpdateWeights);
+            });
+        });
+
+        // Validar y actualizar pesos
+        function validateAndUpdateWeights() {
+            const weights = {
+                manual: parseFloat(document.getElementById('weight_manual')?.value || 0),
+                exif: parseFloat(document.getElementById('weight_exif')?.value || 0),
+                ai: parseFloat(document.getElementById('weight_ai')?.value || 0),
+                library: parseFloat(document.getElementById('weight_library')?.value || 0)
+            };
+
+            const total = weights.manual + weights.exif + weights.ai + weights.library;
+            const totalDisplay = document.getElementById('totalWeights');
+            const validationBadge = document.getElementById('validationBadge');
+
+            if (totalDisplay) totalDisplay.textContent = total.toFixed(1);
+
+            if (validationBadge) {
+                if (Math.abs(total - 100) < 0.1) {
+                    validationBadge.className = 'badge bg-success ms-2';
+                    validationBadge.innerHTML = '✓ Válido';
+                } else if (total > 100) {
+                    validationBadge.className = 'badge bg-danger ms-2';
+                    validationBadge.innerHTML = '✗ Excedido';
+                } else {
+                    validationBadge.className = 'badge bg-warning ms-2';
+                    validationBadge.innerHTML = '✗ Incompleto';
+                }
+            }
+        }
+
+        // Guardar configuración de pesos
+        async function saveConfidenceWeights() {
+            const weights = {
+                manual: parseFloat(document.getElementById('weight_manual').value || 0),
+                exif: parseFloat(document.getElementById('weight_exif').value || 0),
+                ai: parseFloat(document.getElementById('weight_ai').value || 0),
+                library: parseFloat(document.getElementById('weight_library').value || 0)
+            };
+
+            const total = weights.manual + weights.exif + weights.ai + weights.library;
+
+            if (Math.abs(total - 100) > 0.1) {
+                alert('❌ La suma de pesos debe ser exactamente 100%\nActual: ' + total.toFixed(1) + '%');
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_URL}/api/settings/confidence-weights`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(weights)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al guardar pesos');
+                }
+
+                showUploadAlert('✅ Pesos de confianza guardados correctamente', 'success');
+                
+                // Guardar también en localStorage
+                localStorage.setItem('confidenceWeights', JSON.stringify(weights));
+            } catch (error) {
+                console.error('Error al guardar pesos:', error);
+                showUploadAlert('❌ Error al guardar los pesos: ' + error.message, 'danger');
+            }
+        }
+
+        // Restablecer pesos a valores por defecto
+        function resetConfidenceWeights() {
+            if (!confirm('¿Deseas restablecer los pesos a los valores por defecto (25% cada uno)?')) {
+                return;
+            }
+
+            document.getElementById('weight_manual').value = 25;
+            document.getElementById('weight_exif').value = 25;
+            document.getElementById('weight_ai').value = 25;
+            document.getElementById('weight_library').value = 25;
+
+            validateAndUpdateWeights();
+            showUploadAlert('✓ Pesos restablecidos a valores por defecto', 'info');
+        }
+
+        // Cargar pesos guardados
+        function loadConfidenceWeights() {
+            try {
+                const saved = localStorage.getItem('confidenceWeights');
+                if (saved) {
+                    const weights = JSON.parse(saved);
+                    document.getElementById('weight_manual').value = weights.manual || 25;
+                    document.getElementById('weight_exif').value = weights.exif || 25;
+                    document.getElementById('weight_ai').value = weights.ai || 25;
+                    document.getElementById('weight_library').value = weights.library || 25;
+                    validateAndUpdateWeights();
+                }
+            } catch (error) {
+                console.error('Error al cargar pesos:', error);
+            }
+        }
+
+        // Llamar al cargar página
+        window.addEventListener('load', loadConfidenceWeights);
 
         // ==================== FUNCIONES DE TRAINING ====================
         
