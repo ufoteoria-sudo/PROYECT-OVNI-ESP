@@ -1313,6 +1313,28 @@
         #analysisModal .modal-dialog {
             z-index: 10000 !important;
         }
+
+        /* Estilos para tarjetas de resultados */
+        .border-left {
+            border-left: 4px solid #999 !important;
+        }
+
+        .border-left.border-primary {
+            border-left-color: #0d6efd !important;
+        }
+
+        .border-left.border-info {
+            border-left-color: #0dcaf0 !important;
+        }
+
+        .border-left.border-success {
+            border-left-color: #198754 !important;
+        }
+
+        .card-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -2613,6 +2635,38 @@
                         </form>
                     </div>
                     
+                    <!-- Resultados del Análisis y Descargas -->
+                    <div id="analysisResultsCard" class="card p-4 mb-4" style="display: none;">
+                        <h5><i class="bi bi-graph-up"></i> Resultados del Análisis</h5>
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <div class="card bg-light border-0">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-eye-fill" style="font-size: 2rem; color: #0d6efd;"></i>
+                                        <h6 class="mt-3">Previsualizar PDF</h6>
+                                        <p class="text-muted small">Ver un resumen del análisis en formato PDF</p>
+                                        <button class="btn btn-outline-primary btn-sm" id="previewPdfBtn" onclick="previewAnalysisPDF()">
+                                            <i class="bi bi-file-earmark-pdf"></i> Previsualizar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-light border-0">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-download" style="font-size: 2rem; color: #28a745;"></i>
+                                        <h6 class="mt-3">Descargar Reporte</h6>
+                                        <p class="text-muted small">Descargar el reporte completo del análisis</p>
+                                        <button class="btn btn-outline-success btn-sm" id="downloadReportBtn" onclick="downloadAnalysisReport()">
+                                            <i class="bi bi-file-earmark-pdf"></i> Descargar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="analysisStatsContainer" class="mt-4"></div>
+                    </div>
+                    
                     <!-- Lista de uploads -->
                     <div class="card p-4">
                         <h5><i class="bi bi-list"></i> Mis Uploads</h5>
@@ -3218,6 +3272,7 @@
         let currentUser = null;
         let socket = null;
         const activeAnalysis = new Map(); // Almacenar análisis activos
+        let currentAnalysisData = null; // Guardar datos del análisis actual para PDF
 
         // ========== WEBSOCKET CONNECTION ==========
         function initializeWebSocket() {
@@ -3728,6 +3783,11 @@
                         const data = JSON.parse(xhr.responseText);
                         showUploadAlert('¡Archivo y contexto subidos exitosamente! El análisis comenzará automáticamente.', 'success');
                         
+                        // Mostrar resultados del análisis
+                        if (data.analysis || data.analysisData) {
+                            showAnalysisResults(data.analysis || data.analysisData || data);
+                        }
+                        
                         // Limpiar formulario
                         document.getElementById('uploadForm').reset();
                         document.getElementById('previewContainer').style.display = 'none';
@@ -3769,6 +3829,154 @@
                 progressContainer.style.display = 'none';
             }
         });
+
+        // 📄 Mostrar resultados de análisis después de subida
+        function showAnalysisResults(analysisData) {
+            currentAnalysisData = analysisData;
+            const resultsCard = document.getElementById('analysisResultsCard');
+            const statsContainer = document.getElementById('analysisStatsContainer');
+            
+            if (!resultsCard) return;
+            
+            // Mostrar tarjeta de resultados
+            resultsCard.style.display = 'block';
+            
+            // Mostrar estadísticas si existen
+            if (analysisData.analysis && analysisData.analysis.results) {
+                const results = analysisData.analysis.results;
+                statsContainer.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-left border-primary">
+                                <div class="card-body">
+                                    <h6 class="card-title text-primary">Confianza General</h6>
+                                    <h5>${(results.confidence * 100).toFixed(1)}%</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-left border-info">
+                                <div class="card-body">
+                                    <h6 class="card-title text-info">Clasificación</h6>
+                                    <h5>${results.classification || 'Análisis en curso'}</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-left border-success">
+                                <div class="card-body">
+                                    <h6 class="card-title text-success">Estado</h6>
+                                    <h5>${analysisData.status || 'Completado'}</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // 📋 Previsualizar PDF del análisis
+        async function previewAnalysisPDF() {
+            if (!currentAnalysisData) {
+                alert('No hay análisis disponible para previsualizar');
+                return;
+            }
+
+            try {
+                // Mostrar modal o ventana emergente con opciones
+                const pdfWindow = window.open('', '_blank', 'width=800,height=600');
+                pdfWindow.document.write(`
+                    <html>
+                        <head>
+                            <title>Previsualización de PDF</title>
+                            <style>
+                                body { font-family: Arial, sans-serif; margin: 20px; }
+                                h1 { color: #0d6efd; }
+                                .info { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0; }
+                                .btn { padding: 10px 20px; margin: 5px; cursor: pointer; }
+                                .btn-primary { background: #0d6efd; color: white; }
+                                .btn-success { background: #28a745; color: white; }
+                            </style>
+                        </head>
+                        <body>
+                            <h1><i class="bi bi-file-earmark-pdf"></i> Previsualización del Reporte</h1>
+                            <div class="info">
+                                <h3>Análisis de Archivo</h3>
+                                <p><strong>Archivo:</strong> ${currentAnalysisData.filename || 'N/A'}</p>
+                                <p><strong>Tipo:</strong> ${currentAnalysisData.fileType || 'N/A'}</p>
+                                <p><strong>Tamaño:</strong> ${(currentAnalysisData.fileSize / 1024).toFixed(2)} KB</p>
+                                <p><strong>Fecha:</strong> ${new Date(currentAnalysisData.uploadedAt).toLocaleDateString()}</p>
+                            </div>
+                            <div class="info">
+                                <h3>Resultados del Análisis</h3>
+                                <p><strong>Confianza:</strong> ${(currentAnalysisData.analysis?.results?.confidence * 100).toFixed(1)}%</p>
+                                <p><strong>Clasificación:</strong> ${currentAnalysisData.analysis?.results?.classification || 'En análisis'}</p>
+                                <p><strong>Estado:</strong> ${currentAnalysisData.status}</p>
+                            </div>
+                            <button class="btn btn-success" onclick="window.close()">Cerrar</button>
+                        </body>
+                    </html>
+                `);
+                pdfWindow.document.close();
+            } catch (error) {
+                console.error('Error en previsualización:', error);
+                alert('Error al previsualizar: ' + error.message);
+            }
+        }
+
+        // 📥 Descargar reporte PDF
+        async function downloadAnalysisReport() {
+            if (!currentAnalysisData) {
+                alert('No hay análisis disponible para descargar');
+                return;
+            }
+
+            try {
+                const btn = document.getElementById('downloadReportBtn');
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Descargando...';
+
+                const token = localStorage.getItem('token');
+                const analysisId = currentAnalysisData._id || currentAnalysisData.id;
+
+                // Llamar al endpoint de generación de PDF
+                const response = await fetch(`${API_URL}/api/reports/generate-pdf`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        type: 'analysis-summary',
+                        data: currentAnalysisData
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al generar PDF');
+                }
+
+                // Descargar archivo
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `reporte-analisis-${Date.now()}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                showUploadAlert('✅ PDF descargado exitosamente', 'success');
+            } catch (error) {
+                console.error('Error al descargar:', error);
+                showUploadAlert('❌ Error al descargar PDF: ' + error.message, 'danger');
+            } finally {
+                const btn = document.getElementById('downloadReportBtn');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-file-earmark-pdf"></i> Descargar';
+            }
+        }
 
         // Cargar lista de uploads
         async function loadUploads() {
