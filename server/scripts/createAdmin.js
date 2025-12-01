@@ -1,17 +1,15 @@
-const mongoose = require('mongoose');
+const { User, sequelize } = require('../config/db');
 const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
-const User = require('../models/User');
-
 const createAdminUser = async () => {
   try {
-    // Conectar a MongoDB
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log('✅ Conectado a MongoDB');
+    // Conectar a PostgreSQL
+    await sequelize.authenticate();
+    console.log('✅ Conectado a PostgreSQL');
     
     // Verificar si ya existe un admin
-    const existingAdmin = await User.findOne({ role: 'admin' });
+    const existingAdmin = await User.findOne({ where: { role: 'admin' } });
     if (existingAdmin) {
       console.log('⚠️  Ya existe un usuario administrador:', existingAdmin.username);
       process.exit(0);
@@ -19,15 +17,15 @@ const createAdminUser = async () => {
     
     // Datos del admin
     const adminData = {
-      username: 'admin',
-      email: 'admin@uap.com',
-      password: 'Admin123!',
+      username: 'ufoteoria',
+      email: 'ufoteoria@gmail.com',
+      password: 'admin123',
       firstName: 'Administrador',
       lastName: 'UAP',
       role: 'admin',
       subscription: {
         status: 'active',
-        plan: 'lifetime'
+        plan: 'enterprise'
       },
       isActive: true
     };
@@ -37,18 +35,23 @@ const createAdminUser = async () => {
     adminData.password = await bcrypt.hash(adminData.password, salt);
     
     // Crear admin
-    const admin = new User(adminData);
-    await admin.save();
+    const admin = await User.create(adminData);
     
     console.log('✅ Usuario administrador creado exitosamente!');
-    console.log('📧 Email:', adminData.email);
-    console.log('🔑 Password: Admin123!');
-    console.log('⚠️  CAMBIAR LA CONTRASEÑA EN PRODUCCIÓN');
+    console.log('📧 Email:', admin.email);
+    console.log('👤 Username:', admin.username);
+    console.log('🔑 Password: admin123');
+    console.log('👑 Role: admin');
+    console.log('🆔 ID:', admin.id);
+    console.log('\n💡 Puedes acceder con:');
+    console.log('   curl -X POST http://localhost:3000/api/auth/login \\');
+    console.log('   -H "Content-Type: application/json" \\');
+    console.log('   -d \'{"email":"ufoteoria@gmail.com","password":"admin123"}\'');
     
     process.exit(0);
     
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error('❌ Error:', error.message);
     process.exit(1);
   }
 };

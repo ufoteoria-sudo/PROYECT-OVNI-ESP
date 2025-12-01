@@ -1,11 +1,11 @@
 const path = require('path');
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const mongoSanitize = require('express-mongo-sanitize');
 const hpp = require('hpp');
+const { initializeDatabase } = require('./config/db');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const app = express();
@@ -135,17 +135,16 @@ app.get('*', (req, res, next) => {
   }
 });
 
-// Conexión a MongoDB
-const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/uap-db';
-mongoose.connect(mongoUri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-  .then(() => console.log('Conectado a MongoDB'))
-  .catch((error) => {
-    console.error('Error conectando a MongoDB:', error);
+// Conexión a PostgreSQL (Sequelize)
+(async () => {
+  try {
+    await initializeDatabase();
+    console.log('✅ Base de datos PostgreSQL inicializada correctamente');
+  } catch (error) {
+    console.error('❌ Error al inicializar la base de datos:', error.message);
     process.exit(1);
-  });
+  }
+})();
 
 // Error handler básico para rutas no encontradas
 app.use((req, res, next) => {
