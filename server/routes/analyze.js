@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const Analysis = require('../models/Analysis');
-const aiService = require('../services/aiService');
+// const aiService = require('../services/aiService'); // DESHABILITADO: Usar SOLO matching con biblioteca
 const localAiService = require('../services/localAiService'); // Análisis local GRATIS
 const scientificComparisonService = require('../services/scientificComparisonService');
 const exifService = require('../services/exifService');
@@ -131,13 +131,12 @@ router.get('/:id/status', auth, async (req, res) => {
 router.get('/config', auth, async (req, res) => {
   try {
     const visualSystemReady = visualComparisonService.isConfigured();
-    const aiSystemReady = aiService.isConfigured();
     
     res.json({
       analysisConfigured: visualSystemReady,
-      provider: 'visual_comparison',
-      aiBackup: aiSystemReady,
-      message: 'Sistema de análisis por comparación visual activo. Base de datos de objetos conocidos cargada.',
+      provider: 'visual_comparison + library_matching',
+      aiBackup: false, // DESHABILITADO: Usar SOLO matching con biblioteca
+      message: 'Sistema de análisis por comparación visual y matching de biblioteca activo. 1,064+ objetos conocidos cargados.',
       databaseObjects: await require('../models/UFODatabase').countDocuments({ isActive: true })
     });
 

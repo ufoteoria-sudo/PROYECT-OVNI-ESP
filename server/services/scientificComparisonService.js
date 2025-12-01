@@ -2,7 +2,7 @@ const UFODatabase = require('../models/UFODatabase');
 const featureExtractionService = require('./featureExtractionService');
 const TrainingMatchService = require('./trainingMatchService');
 const objectDetectionService = require('./objectDetectionService');
-const aiService = require('./aiService');
+// const aiService = require('./aiService'); // DESHABILITADO: Usar SOLO matching con biblioteca
 
 /**
  * SERVICIO DE COMPARACIÓN CIENTÍFICA DE IMÁGENES - VERSIÓN HÍBRIDA
@@ -185,41 +185,12 @@ async function analyzeImageScientifically(filePath, exifData = {}) {
     let llamaAnalysis = null;
     let llamaBonus = 0;
     
-    // Solo usar Llama si la confianza es baja o media (<75%)
-    if (finalConfidence < 75 && aiService.isConfigured()) {
-      console.log('   Confianza < 75%, solicitando análisis adicional de Llama...');
-      const llamaResult = await aiService.analyzeImage(filePath);
-      
-      if (llamaResult.success) {
-        llamaAnalysis = llamaResult.data;
-        console.log(`✅ Llama Vision completado:`);
-        console.log(`   - Categoría: ${llamaAnalysis.category}`);
-        console.log(`   - Confianza: ${llamaAnalysis.confidence}%`);
-        console.log(`   - Descripción: ${llamaAnalysis.description.substring(0, 100)}...`);
-        
-        // Si Llama tiene alta confianza y coincide con análisis científico, dar bonus
-        if (llamaAnalysis.confidence >= 70 && llamaAnalysis.category === category) {
-          llamaBonus = Math.round((llamaAnalysis.confidence - 70) / 5); // 0-6% bonus
-          console.log(`   📈 Bonus por coincidencia Llama: +${llamaBonus}%`);
-        } else if (llamaAnalysis.category !== category) {
-          console.log(`   ⚠️  Discrepancia: Llama detectó "${llamaAnalysis.category}" vs científico "${category}"`);
-          // No aplicar bonus si hay discrepancia
-        }
-        
-        // Enriquecer descripción con análisis de Llama
-        if (llamaAnalysis.description && llamaAnalysis.description.length > 50) {
-          description += `\n\nAnálisis contextual (IA): ${llamaAnalysis.description}`;
-        }
-        
-        // Recalcular confianza final con bonus de Llama
-        finalConfidence = Math.min(Math.max(finalConfidence + llamaBonus, 0), 99);
-      } else {
-        console.log('⚠️  Llama Vision no disponible o falló, continuando sin análisis semántico');
-      }
-    } else if (finalConfidence >= 75) {
-      console.log('   ✓ Confianza alta (≥75%), Llama Vision no necesario');
-    } else {
-      console.log('   ⚠️  Llama Vision no configurado (HF_TOKEN), saltando análisis semántico');
+    // NOTA: Fallback a IA DESHABILITADO - Usar SOLO matching con biblioteca de 1,064 objetos
+    // para mejor rendimiento y sin dependencias de APIs externas
+    if (finalConfidence < 75) {
+      console.log('   ℹ️  Confianza < 75%, pero el análisis IA está deshabilitado.');
+      console.log('      Sistema confiará en el matching con 1,064 objetos de la biblioteca.');
+      console.log('      Recomendación: Aumentar precisión del matching visual o revisar manualmente.');
     }
     
     // **SCORING FINAL HÍBRIDO**
