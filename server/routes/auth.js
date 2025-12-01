@@ -190,15 +190,17 @@ router.get('/me', auth, async (req, res) => {
     }
     
     res.json({
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      role: user.role,
-      subscription: user.subscription,
-      profile: user.profile,
-      lastLogin: user.lastLogin
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        subscription: user.subscription,
+        profile: user.profile,
+        lastLogin: user.lastLogin
+      }
     });
     
   } catch (error) {

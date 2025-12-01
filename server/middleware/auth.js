@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const { User } = require('../config/db');
 
 // Middleware para verificar token JWT
 const auth = async (req, res, next) => {
@@ -14,17 +14,20 @@ const auth = async (req, res, next) => {
     // Verificar token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'uap-secret-key-2025');
     
-    // Obtener usuario de la base de datos
-    const user = await User.findById(decoded.userId).select('-password');
+    // Obtener usuario de la base de datos con Sequelize
+    const user = await User.findByPk(decoded.userId, {
+      attributes: { exclude: ['password'] }
+    });
     
     if (!user) {
       return res.status(401).json({ error: 'Usuario no encontrado.' });
     }
     
-    // Agregar datos del usuario al request (compatibilidad con código existente)
-    req.userId = user._id.toString();
-    req.userRole = user.role;
-    req.user = user; // Objeto completo para nuevas rutas
+    // Agregar datos del usuario al request
+    req.user = {
+      userId: user.id,
+      role: user.role
+    };
     
     next();
   } catch (error) {
